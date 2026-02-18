@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Exercises | Work Warrior</title>
+    <link rel="canonical" href="https://workwarrior.com/exercises" />
+    <link rel="stylesheet" href="styles.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@700&family=Inter:wght@400;500;700&family=Outfit:wght@800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <a href="index.html" class="logo">
+                <img src="assets/images/logo-work-warrior.svg" alt="Work Warrior Logo">
+            </a>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="groups.html">Groups</a></li>
+                    <li><a href="exercises.html" class="active">Exercise</a></li>
+
+                    <li><a href="research.html">Research</a></li>
+                    <li><a href="resources.html">Resources</a></li>
+                    <li><a href="profile.html">My Profile</a></li>
+                </ul>
+            </nav>
+            <div class="auth-nav">
+                <button id="login-nav-btn" class="primary-btn">Login</button>
+                <div id="user-info" class="hidden">
+                    <span id="user-display"></span>
+                    <button id="logout-btn" class="secondary-btn"
+                        style="width: auto; padding: 0.5rem 1rem; margin-left: 1rem;">Logout</button>
+                </div>
+            </div>
+            <button id="settings-toggle" class="icon-btn" title="Settings">⚙️</button>
+            <button id="mobile-menu-toggle" class="icon-btn mobile-only" title="Menu">☰</button>
+        </header>
+
+        <!-- Auth Modal -->
+        <div id="auth-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <button class="modal-close" id="close-auth">&times;</button>
+                <form id="auth-form" class="auth-form">
+                    <h3 id="auth-title">Welcome Back</h3>
+                    <p id="auth-subtitle">Enter your email and password to log in.</p>
+                    <div class="setting-group">
+                        <label>Email Address</label>
+                        <input type="email" id="auth-email" placeholder="email@example.com" required>
+                    </div>
+                    <div class="setting-group">
+                        <label>Password</label>
+                        <input type="password" id="auth-password" placeholder="••••••••" required>
+                    </div>
+                    <div class="setting-group hidden" id="auth-role-group">
+                        <label>I am a...</label>
+                        <select id="auth-role">
+                            <option value="member">Group Member</option>
+                            <option value="leader">Group Leader</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="auth-submit" class="primary-btn"
+                        style="width: 100%; justify-content: center;">Log In</button>
+                    <div class="auth-toggle">
+                        <span id="toggle-text">Don't have an account?</span>
+                        <button type="button" id="toggle-auth">Create Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <main>
+            <section class="hero-section hero-exercises">
+                <div class="content-container">
+                    <h2>All Exercises</h2>
+                    <p>A comprehensive collection of movements to keep you feeling your best. Filtered by category for
+                        easy
+                        access.</p>
+                </div>
+            </section>
+
+            <div class="content-area">
+                <div class="content-container">
+                    <div class="exercise-grid" id="all-exercises-list">
+                        <!-- Will be populated by JS -->
+                    </div>
+
+                    <div class="info-card" style="margin-top: 4rem;">
+                        <h3>The Importance of Variety</h3>
+                        <p>Switching between different types of exercises—desk-based, standing, and eye-focused—ensures
+                            that
+                            you address all aspects of workplace wellness. Variety prevents overuse injuries and keeps
+                            your
+                            mind engaged.</p>
+                    </div>
+                </div>
+            </div>
+            <section id="bottom-auth-section" class="bottom-auth-section">
+                <div class="content-container">
+                    <h3>Ready to Join the Movement?</h3>
+                    <p>Choose your role to get started or log back in.</p>
+                    <div class="bottom-auth-grid">
+                        <div class="bottom-auth-card" id="login-member-btn">
+                            <h4>Group Members</h4>
+                            <p>Join your team, track exercises, and share your daily vibe.</p>
+                            <button class="primary-btn" style="margin: 0 auto; pointer-events: none;">Login as
+                                Member</button>
+                        </div>
+                        <div class="bottom-auth-card" id="login-organizer-btn">
+                            <h4>Group Organizers</h4>
+                            <p>Create groups, manage codes, and lead your team to wellness.</p>
+                            <button class="secondary-btn" style="margin: 0 auto; pointer-events: none;">Login as
+                                Organizer</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Settings panel -->
+    <aside id="settings-panel" class="settings-panel hidden">
+        <div class="settings-header">
+            <h3>Settings</h3>
+            <button id="close-settings" class="close-btn">&times;</button>
+        </div>
+        <div class="settings-content">
+            <div class="setting-group">
+                <label for="gemini-model">Warrior Bot AI Model</label>
+                <select id="gemini-model">
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                    <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash (Latest)</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                    <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro (Latest)</option>
+                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Exp)</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <button id="check-models" class="secondary-btn" style="margin-bottom: 1rem; width: 100%;">🔍 Check
+                    Available Models</button>
+                <div id="model-list-debug" class="hint"
+                    style="max-height: 100px; overflow-y: auto; white-space: pre-wrap;"></div>
+            </div>
+            <div class="setting-group">
+                <label for="api-key">Warrior Bot API Key (Gemini)</label>
+                <input type="password" id="api-key" placeholder="Enter your API key">
+            </div>
+            <div class="setting-group">
+                <label for="system-prompt">System Prompt</label>
+                <textarea id="system-prompt" rows="10"></textarea>
+                <p class="hint">Adjust how Warrior Bot guides your exercises.</p>
+            </div>
+            <button id="save-settings" class="secondary-btn">Save Configuration</button>
+        </div>
+    </aside>
+
+    <script src="exercises.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const list = document.getElementById('all-exercises-list');
+            list.className = 'exercise-sections-list'; // Update class for new layout
+
+            EXERCISES.forEach((ex, index) => {
+                const section = document.createElement('section');
+                section.className = 'exercise-section';
+                section.id = ex.id;
+
+                // Create badges for sitting/standing options
+                const optionsHtml = ex.options.map(opt => {
+                    const badgeClass = opt.toLowerCase().includes('sitting') ? 'badge-sitting' : 'badge-standing';
+                    return `<span class="option-badge ${badgeClass}">${opt}</span>`;
+                }).join('');
+
+                // Create detailed workout steps grid
+                const workoutStepsHtml = ex.workout.map((step, i) => {
+                    // Placeholder logic for missing images
+                    const stepImage = step.image || `https://placehold.co/600x400/e2e8f0/475569?text=Step+${i + 1}`;
+
+                    return `
+                    <div class="step-card">
+                        <div class="step-image-wrapper">
+                            <img src="${stepImage}" alt="${step.subtitle || 'Step ' + (i + 1)}" onerror="this.src='https://placehold.co/600x400/e2e8f0/475569?text=Image+Missing'">
+                            <span class="step-badge">${step.duration}</span>
+                        </div>
+                        <div class="step-details">
+                            <h5>${step.subtitle || 'Step ' + (i + 1)}</h5>
+                            <p>${step.instruction}</p>
+                        </div>
+                    </div>`;
+                }).join('');
+
+                section.innerHTML = `
+                    <div class="exercise-header-group">
+                        <div class="option-badges">${optionsHtml}</div>
+                        <h3>${ex.title}</h3>
+                        <span class="section-benefit">${ex.benefit}</span>
+                        <p class="section-description">${ex.description}</p>
+                    </div>
+                    
+                    <div class="workout-visual-container">
+                        <h4><span class="pulse-dot"></span> Guided Protocol</h4>
+                        <div class="step-grid">
+                            ${workoutStepsHtml}
+                        </div>
+                    </div>
+                `;
+                list.appendChild(section);
+            });
+
+            // Handle deep linking and highlighting
+            const hash = window.location.hash;
+            if (hash) {
+                const targetId = hash.substring(1);
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    setTimeout(() => {
+                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        targetEl.classList.add('highlight-pulse');
+
+                        // Remove highlight after a few seconds
+                        setTimeout(() => {
+                            targetEl.classList.remove('highlight-pulse');
+                        }, 6000);
+                    }, 500);
+                }
+            }
+        });
+    </script>
+    <a href="index.html" class="floating-logo" title="Back to Home">
+        <img src="assets/images/logo-work-warrior.svg" alt="Work Warrior Logo">
+    </a>
+    <script src="app.js"></script>
+</body>
+
+</html>

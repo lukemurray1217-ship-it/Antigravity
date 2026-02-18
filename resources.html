@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources & FAQ | Wellness Workspace</title>
+    <link rel="stylesheet" href="styles.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@700&family=Inter:wght@400;500;700&family=Outfit:wght@800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <a href="index.html" class="logo">
+                <img src="assets/images/logo-work-warrior.svg" alt="Work Warrior Logo">
+            </a>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="groups.html">Groups</a></li>
+                    <li><a href="exercises.html">Exercise</a></li>
+
+                    <li><a href="research.html">Research</a></li>
+                    <li><a href="resources.html" class="active">Resources</a></li>
+                    <li><a href="profile.html">My Profile</a></li>
+                </ul>
+            </nav>
+            <div class="auth-nav">
+                <button id="login-nav-btn" class="primary-btn">Login</button>
+                <div id="user-info" class="hidden">
+                    <span id="user-display"></span>
+                    <button id="logout-btn" class="secondary-btn"
+                        style="width: auto; padding: 0.5rem 1rem; margin-left: 1rem;">Logout</button>
+                </div>
+            </div>
+            <button id="settings-toggle" class="icon-btn" title="Settings">⚙️</button>
+            <button id="mobile-menu-toggle" class="icon-btn mobile-only" title="Menu">☰</button>
+        </header>
+
+        <!-- Auth Modal -->
+        <div id="auth-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <button class="modal-close" id="close-auth">&times;</button>
+                <div id="login-view">
+                    <form id="auth-form" class="auth-form">
+                        <h3 id="auth-title">Welcome Back</h3>
+                        <p id="auth-subtitle">Enter your email and password to log in.</p>
+                        <div class="setting-group">
+                            <label>Email Address</label>
+                            <input type="email" id="auth-email" placeholder="email@example.com" required>
+                        </div>
+                        <div class="setting-group">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label>Password</label>
+                                <button type="button" id="forgot-password-btn" class="hint-link"
+                                    style="font-size: 0.75rem; background: none; border: none; color: var(--primary); cursor: pointer; padding: 0;">Forgot?</button>
+                            </div>
+                            <input type="password" id="auth-password" placeholder="••••••••" required>
+                        </div>
+                        <div class="setting-group hidden" id="auth-role-group">
+                            <label>I am a...</label>
+                            <select id="auth-role">
+                                <option value="member">Group Member</option>
+                                <option value="leader">Group Leader</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="auth-submit" class="primary-btn"
+                            style="width: 100%; justify-content: center;">Log In</button>
+                        <div class="auth-toggle">
+                            <span id="toggle-text">Don't have an account?</span>
+                            <button type="button" id="toggle-auth">Create Account</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="reset-view" class="hidden">
+                    <div class="auth-form">
+                        <h3>Reset Password</h3>
+                        <p>Enter your email and new password.</p>
+                        <div class="setting-group">
+                            <label>Email Address</label>
+                            <input type="email" id="reset-email" placeholder="email@example.com">
+                        </div>
+                        <div class="setting-group">
+                            <label>New Password</label>
+                            <input type="password" id="new-password" placeholder="••••••••">
+                        </div>
+                        <button type="button" id="confirm-reset" class="primary-btn"
+                            style="width: 100%; justify-content: center;">Update Password</button>
+                        <div class="auth-toggle">
+                            <button type="button" id="back-to-login">Back to Login</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <main>
+            <section class="hero-section hero-resources reveal">
+                <div class="content-container">
+                    <h2>Knowledge Architecture.</h2>
+                    <p>Optimizing your integration of movement, ergonomic science, and cognitive flow.</p>
+                </div>
+            </section>
+
+            <div class="content-area">
+                <div class="content-container">
+                    <div class="faq-item reveal">
+                        <h4>Protocol Frequency</h4>
+                        <p>The 20-20-20 rule is a fundamental starting point. For sustained performance, target a
+                            2-minute
+                            mobility interval every 60 minutes of deep work.</p>
+                    </div>
+
+                    <div class="faq-item reveal">
+                        <h4>Environmental Compatibility</h4>
+                        <p>The Work Warrior library is engineered for subtlety. Each movement is designed for seamless
+                            integration into open-plan office environments without disruption.</p>
+                    </div>
+
+                    <div class="faq-item reveal">
+                        <h4>Resource Acquisition</h4>
+                        <p>No specialized hardware is required. All protocols utilize standard workplace architecture
+                            and
+                            individual body weight to achieve ergonomic reset.</p>
+                    </div>
+
+                    <div class="faq-item reveal">
+                        <h4>Physical Limitations</h4>
+                        <p>Listen to your internal bio-feedback. If a protocol induces discomfort, terminate the
+                            movement.
+                            These strategies are designed for preventative maintenance and resilience.</p>
+                    </div>
+
+                    <div class="faq-item reveal">
+                        <h4>ROI on Movement</h4>
+                        <p>Movement breaks are highly leveraged productivity tools. Oxygenating the cerebral cortex
+                            inhibits
+                            decision fatigue and maximizes cognitive output during peak hours.</p>
+                    </div>
+
+                    <h2 class="section-title" style="margin-top: 4rem;">External Resources</h2>
+                    <div class="info-card">
+                        <ul style="list-style: square; padding-left: 1.5rem;">
+                            <li style="margin-bottom: 1rem;"><a href="https://aistudio.google.com/app/apikey"
+                                    target="_blank" style="color: var(--primary);">Get your Gemini API Key (for Warrior
+                                    Bot)</a></li>
+                            <li style="margin-bottom: 1rem;"><a href="https://www.osha.gov/ergonomics" target="_blank"
+                                    style="color: var(--primary);">OSHA Ergonomics Guidelines</a></li>
+                            <li><a href="https://www.mayoclinic.org/healthy-lifestyle/adult-health/in-depth/office-ergonomics/art-20046169"
+                                    target="_blank" style="color: var(--primary);">Mayo Clinic: Office Ergonomics</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <section id="bottom-auth-section" class="bottom-auth-section">
+                <div class="content-container">
+                    <h3>Ready to Join the Movement?</h3>
+                    <p>Choose your role to get started or log back in.</p>
+                    <div class="bottom-auth-grid">
+                        <div class="bottom-auth-card" id="login-member-btn">
+                            <h4>Group Members</h4>
+                            <p>Join your team, track exercises, and share your daily vibe.</p>
+                            <button class="primary-btn" style="margin: 0 auto; pointer-events: none;">Login as
+                                Member</button>
+                        </div>
+                        <div class="bottom-auth-card" id="login-organizer-btn">
+                            <h4>Group Organizers</h4>
+                            <p>Create groups, manage codes, and lead your team to wellness.</p>
+                            <button class="secondary-btn" style="margin: 0 auto; pointer-events: none;">Login as
+                                Organizer</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <aside id="settings-panel" class="settings-panel hidden">
+        <div class="settings-header">
+            <h3>Settings</h3>
+            <button id="close-settings" class="close-btn">&times;</button>
+        </div>
+        <div class="settings-content">
+            <div class="setting-group">
+                <label for="gemini-model">Warrior Bot AI Model</label>
+                <select id="gemini-model">
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                    <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash (Latest)</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                    <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro (Latest)</option>
+                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Exp)</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <button id="check-models" class="secondary-btn" style="margin-bottom: 1rem; width: 100%;">🔍 Check
+                    Available Models</button>
+                <div id="model-list-debug" class="hint"
+                    style="max-height: 100px; overflow-y: auto; white-space: pre-wrap;"></div>
+            </div>
+            <div class="setting-group">
+                <label for="api-key">Warrior Bot API Key (Gemini)</label>
+                <input type="password" id="api-key" placeholder="Enter your API key">
+            </div>
+            <div class="setting-group">
+                <label for="system-prompt">System Prompt</label>
+                <textarea id="system-prompt" rows="10"></textarea>
+            </div>
+            <button id="save-settings" class="secondary-btn">Save Configuration</button>
+        </div>
+    </aside>
+
+    <a href="index.html" class="floating-logo" title="Back to Home">
+        <img src="assets/images/logo-work-warrior.svg" alt="Work Warrior Logo">
+    </a>
+    <script src="exercises.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

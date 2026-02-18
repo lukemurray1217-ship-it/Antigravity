@@ -1,0 +1,32 @@
+<svg width="450" height="200" viewBox="-40 0 450 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .work-text { fill: #98b4a6; font-family: 'Georgia', 'Times New Roman', serif; font-weight: 900; font-size: 72px; font-style: italic; letter-spacing: -2px; }
+      .warrior-text { fill: #d4a373; font-family: 'Georgia', 'Times New Roman', serif; font-weight: 900; font-size: 72px; font-style: italic; letter-spacing: -2px; }
+      .icon-sage { fill: none; stroke: #98b4a6; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+      .icon-sand { fill: #d4a373; }
+    </style>
+  </defs>
+  
+  <!-- WORK -->
+  <g transform="translate(40, 70)">
+    <text x="-35" y="0" class="work-text">W</text>
+    <g transform="translate(68, -50) skewX(-5)">
+      <rect x="0" y="0" width="48" height="35" rx="4" class="icon-sage"/>
+      <path d="M12 45 L36 45 M24 35 L24 45" class="icon-sage" stroke-width="5"/>
+    </g>
+    <text x="125" y="0" class="work-text">RK</text>
+  </g>
+  
+  <!-- WARRIOR -->
+  <g transform="translate(-10, 150)">
+    <text x="0" y="0" class="warrior-text">WARR</text>
+    <g transform="translate(265, -60) skewX(-10)">
+      <rect x="-4" y="0" width="30" height="14" rx="3" class="icon-sand"/>
+      <rect x="-4" y="50" width="30" height="14" rx="3" class="icon-sand"/>
+      <rect x="6" y="10" width="10" height="45" class="icon-sand"/>
+    </g>
+    <!-- Shifting OR again slightly left (from 300 to 290) -->
+    <text x="290" y="0" class="warrior-text">OR</text>
+  </g>
+</svg>

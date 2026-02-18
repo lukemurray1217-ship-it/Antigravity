@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | Work Warrior</title>
+    <link rel="stylesheet" href="styles.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@700&family=Inter:wght@400;500;700&family=Outfit:wght@800&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <a href="index.html" class="logo">
+                <img src="assets/images/logo-work-warrior.svg" alt="Work Warrior Logo">
+            </a>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="groups.html">Groups</a></li>
+                    <li><a href="exercises.html">Exercise</a></li>
+
+                    <li><a href="research.html">Research</a></li>
+                    <li><a href="resources.html">Resources</a></li>
+                    <li><a href="profile.html" class="active">My Profile</a></li>
+                </ul>
+            </nav>
+            <div class="auth-nav">
+                <button id="login-nav-btn" class="primary-btn">Login</button>
+                <div id="user-info" class="hidden">
+                    <span id="user-display"></span>
+                    <button id="logout-btn" class="secondary-btn"
+                        style="width: auto; padding: 0.5rem 1rem; margin-left: 1rem;">Logout</button>
+                </div>
+            </div>
+            <button id="settings-toggle" class="icon-btn" title="Settings">⚙️</button>
+            <button id="mobile-menu-toggle" class="icon-btn mobile-only" title="Menu">☰</button>
+        </header>
+
+        <!-- Auth Modal -->
+        <div id="auth-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <button class="modal-close" id="close-auth">&times;</button>
+                <div id="login-view">
+                    <form id="auth-form" class="auth-form">
+                        <h3 id="auth-title">Welcome Back</h3>
+                        <p id="auth-subtitle">Enter your email and password to log in.</p>
+                        <div class="setting-group">
+                            <label>Email Address</label>
+                            <input type="email" id="auth-email" placeholder="email@example.com" required>
+                        </div>
+                        <div class="setting-group">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label>Password</label>
+                                <button type="button" id="forgot-password-btn" class="hint-link"
+                                    style="font-size: 0.75rem; background: none; border: none; color: var(--primary); cursor: pointer; padding: 0;">Forgot?</button>
+                            </div>
+                            <input type="password" id="auth-password" placeholder="••••••••" required>
+                        </div>
+                        <div class="setting-group hidden" id="auth-role-group">
+                            <label>I am a...</label>
+                            <select id="auth-role">
+                                <option value="member">Group Member</option>
+                                <option value="leader">Group Leader</option>
+                            </select>
+                        </div>
+                        <button type="submit" id="auth-submit" class="primary-btn"
+                            style="width: 100%; justify-content: center;">Log In</button>
+                        <div class="auth-toggle">
+                            <span id="toggle-text">Don't have an account?</span>
+                            <button type="button" id="toggle-auth">Create Account</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="reset-view" class="hidden">
+                    <div class="auth-form">
+                        <h3>Reset Password</h3>
+                        <p>Enter your email and new password.</p>
+                        <div class="setting-group">
+                            <label>Email Address</label>
+                            <input type="email" id="reset-email" placeholder="email@example.com">
+                        </div>
+                        <div class="setting-group">
+                            <label>New Password</label>
+                            <input type="password" id="new-password" placeholder="••••••••">
+                        </div>
+                        <button type="button" id="confirm-reset" class="primary-btn"
+                            style="width: 100%; justify-content: center;">Update Password</button>
+                        <div class="auth-toggle">
+                            <button type="button" id="back-to-login">Back to Login</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <main>
+            <section class="hero-section hero-home">
+                <div class="content-container">
+                    <h2 id="profile-greet">My Profile</h2>
+                    <p>Track your progress and view your recent workout updates.</p>
+                </div>
+            </section>
+
+            <div class="content-area">
+                <div class="content-container">
+                    <div id="logged-in-content" class="hidden">
+                        <section id="profile-newsletter-section" class="info-card"
+                            style="margin-bottom: 2rem; border-left: 4px solid var(--primary);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <h3 style="margin: 0;">📬 Weekly Newsletter</h3>
+                                    <p id="profile-no-newsletter-msg" class="hint">Your group leader hasn't broadcasted
+                                        the newsletter yet.</p>
+                                    <div id="profile-latest-newsletter-card" class="hidden" style="margin-top: 1rem;">
+                                        <h4 id="profile-newsletter-title" style="margin-bottom: 0.25rem;"></h4>
+                                        <p id="profile-newsletter-date" class="hint" style="font-size: 0.8rem;"></p>
+                                    </div>
+                                </div>
+                                <button id="profile-view-newsletter-btn" class="primary-btn hidden">View Latest</button>
+                            </div>
+                        </section>
+
+                        <section id="profile-weekly-goal" class="info-card" style="margin-bottom: 2rem;">
+                            <h3 style="margin: 0 0 1rem 0;">🌟 Your Weekly Personal Goal</h3>
+                            <div id="weekly-goal-render-area">
+                                <!-- Weekly goal will be injected here -->
+                            </div>
+                        </section>
+
+                        <h2 class="section-title">Exercise History</h2>
+                        <div id="history-container" class="history-list">
+                            <!-- History items will be injected here -->
+                        </div>
+                    </div>
+
+                    <div id="logged-out-content">
+                        <div class="info-card" style="text-align: center;">
+                            <h3>Account Required</h3>
+                            <p>Please log in to view your workout updates and history.</p>
+                            <button class="primary-btn" id="profile-login-trigger" style="margin: 2rem auto 0;">Login
+                                Now</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <section id="bottom-auth-section" class="bottom-auth-section">
+                <div class="content-container">
+                    <h3>Ready to Join the Movement?</h3>
+                    <p>Choose your role to get started or log back in.</p>
+                    <div class="bottom-auth-grid">
+                        <div class="bottom-auth-card" id="login-member-btn">
+                            <h4>Group Members</h4>
+                            <p>Join your team, track exercises, and share your daily vibe.</p>
+                            <button class="primary-btn" style="margin: 0 auto; pointer-events: none;">Login as
+                                Member</button>
+                        </div>
+                        <div class="bottom-auth-card" id="login-organizer-btn">
+                            <h4>Group Organizers</h4>
+                            <p>Create groups, manage codes, and lead your team to wellness.</p>
+                            <button class="secondary-btn" style="margin: 0 auto; pointer-events: none;">Login as
+                                Organizer</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Newsletter Modal -->
+        <div id="newsletter-modal" class="modal-overlay hidden">
+            <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto; padding: 0;">
+                <button class="modal-close" id="close-newsletter"
+                    style="color: #666; top: 1rem; right: 1rem; z-index: 10;">&times;</button>
+                <div id="newsletter-render-area">
+                    <!-- Newsletter content will be injected here -->
+                </div>
+            </div>
+        </div>
+
+        <a href="index.html" class="floating-logo" title="Back to Home">
+            <img src="assets/images/logo-work-warrior.svg" alt="Work Warrior Logo">
+        </a>
+    </div>
+
+    <!-- Settings panel -->
+    <aside id="settings-panel" class="settings-panel hidden">
+        <div class="settings-header">
+            <h3>Settings</h3>
+            <button id="close-settings" class="close-btn">&times;</button>
+        </div>
+        <div class="settings-content">
+            <div class="setting-group">
+                <label for="gemini-model">Warrior Bot AI Model</label>
+                <select id="gemini-model">
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                    <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash (Latest)</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                    <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro (Latest)</option>
+                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Exp)</option>
+                </select>
+            </div>
+            <div class="setting-group">
+                <button id="check-models" class="secondary-btn" style="margin-bottom: 1rem; width: 100%;">🔍 Check
+                    Available Models</button>
+                <div id="model-list-debug" class="hint"
+                    style="max-height: 100px; overflow-y: auto; white-space: pre-wrap;"></div>
+            </div>
+            <div class="setting-group">
+                <label for="api-key">Warrior Bot API Key (Gemini)</label>
+                <input type="password" id="api-key" placeholder="Enter your API key">
+            </div>
+            <div class="setting-group">
+                <label for="system-prompt">System Prompt</label>
+                <textarea id="system-prompt" rows="10"></textarea>
+            </div>
+            <button id="save-settings" class="secondary-btn">Save Configuration</button>
+        </div>
+    </aside>
+
+    <script src="exercises.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Profile specific view logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const historyContainer = document.getElementById('history-container');
+            const loggedInView = document.getElementById('logged-in-content');
+            const loggedOutView = document.getElementById('logged-out-content');
+            const greet = document.getElementById('profile-greet');
+            const loginTrigger = document.getElementById('profile-login-trigger');
+
+            loginTrigger.addEventListener('click', () => {
+                window.app.toggleAuthModal(true);
+            });
+
+            // This will be called from app.js when auth state is resolved or updated
+            window.updateProfileView = (user, history) => {
+                const noNewsletterMsg = document.getElementById('profile-no-newsletter-msg');
+                const latestNewsletterCard = document.getElementById('profile-latest-newsletter-card');
+                const newsletterTitle = document.getElementById('profile-newsletter-title');
+                const newsletterDate = document.getElementById('profile-newsletter-date');
+                const viewNewsletterBtn = document.getElementById('profile-view-newsletter-btn');
+                const weeklyGoalArea = document.getElementById('weekly-goal-render-area');
+
+                if (user) {
+                    loggedInView.classList.remove('hidden');
+                    loggedOutView.classList.add('hidden');
+                    greet.innerText = `Hi, ${user.email.split('@')[0]}!`;
+
+                    // Handle Weekly Recommendation
+                    if (window.app && weeklyGoalArea) {
+                        const rec = window.app.getWeeklyRecommendation();
+                        weeklyGoalArea.innerHTML = `
+                            <div class="weekly-goal-card">
+                                <div class="weekly-goal-icon">${rec.icon}</div>
+                                <div class="weekly-goal-info">
+                                    <h4 style="margin: 0;">${rec.title}</h4>
+                                    <p class="hint" style="margin: 0.25rem 0 0.75rem 0;">${rec.benefit}</p>
+                                    <a href="exercises.html#${rec.id}" class="secondary-btn" style="width: auto; display: inline-block; padding: 0.5rem 1rem; font-size: 0.85rem;">View Strategy</a>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Handle Newsletter Display on Profile
+                    const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
+                    const userData = users[user.email] || {};
+                    if (userData.groupCode) {
+                        const newsletter = JSON.parse(localStorage.getItem('newsletter_' + userData.groupCode));
+                        if (newsletter) {
+                            noNewsletterMsg?.classList.add('hidden');
+                            latestNewsletterCard?.classList.remove('hidden');
+                            if (newsletterTitle) newsletterTitle.innerText = newsletter.title;
+                            if (newsletterDate) newsletterDate.innerText = 'Sent ' + new Date(newsletter.timestamp).toLocaleDateString();
+                            viewNewsletterBtn?.classList.remove('hidden');
+
+                            // Link the view button to app's toggle function
+                            if (viewNewsletterBtn && !viewNewsletterBtn.onclick) {
+                                viewNewsletterBtn.onclick = () => window.app.toggleNewsletterModal(true);
+                            }
+                        } else {
+                            noNewsletterMsg?.classList.remove('hidden');
+                            latestNewsletterCard?.classList.add('hidden');
+                            viewNewsletterBtn?.classList.add('hidden');
+                        }
+                    }
+
+                    if (history && history.length > 0) {
+                        historyContainer.innerHTML = '';
+                        // Copy history and reverse it to show newest arrival first
+                        [...history].reverse().forEach(item => {
+                            const date = new Date(item.timestamp).toLocaleString();
+                            const div = document.createElement('div');
+                            div.className = 'history-item';
+                            div.innerHTML = `
+                                <div class="history-date">${date}</div>
+                                <div class="history-content">${item.message}</div>
+                                <div class="history-exercises">
+                                    ${item.exercises.map(ex => `
+                                        <a href="exercises.html#${ex.id || ''}" class="history-exercise-tag">
+                                            ${ex.icon} ${ex.title}
+                                        </a>
+                                    `).join('')}
+                                </div>
+                            `;
+                            historyContainer.appendChild(div);
+                        });
+                    } else {
+                        historyContainer.innerHTML = '<p class="hint">No workout updates yet. Start by asking Warrior Bot for a recommendation!</p>';
+                    }
+                } else {
+                    loggedInView.classList.add('hidden');
+                    loggedOutView.classList.remove('hidden');
+                    greet.innerText = 'My Profile';
+                }
+            };
+
+            // Initial check if app is already loaded
+            if (window.app && window.app.currentUser !== undefined) {
+                window.updateProfileView(window.app.currentUser, window.app.history);
+            }
+        });
+    </script>
+</body>
+
+</html>
