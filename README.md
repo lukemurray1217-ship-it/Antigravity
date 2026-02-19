@@ -33,3 +33,6 @@ The app requires a **Google Gemini API Key**.
 
 ## 📄 License
 MIT
+
+## 🔄 Status
+- **Last Deployment Triggered**: 2026-02-19 (Force Rebuild for Env Vars)
