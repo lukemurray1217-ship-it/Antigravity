@@ -358,17 +358,7 @@ class WellnessApp {
                 <span class="close-toast" style="cursor:pointer; font-size:1.2rem;">&times;</span>
             </div>
             <div class="toast-body" style="margin: 0.5rem 0;">${message}</div>
-            <button class="toast-dismiss-btn" style="
-                background: rgba(255,255,255,0.2);
-                border: 1px solid rgba(255,255,255,0.4);
-                color: white;
-                width: 100%;
-                padding: 6px;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 0.9rem;
-                font-weight: 500;
-            ">Okay</button>
+            <button class="toast-dismiss-btn">Got it 👍</button>
         `;
         container.appendChild(toast);
 
