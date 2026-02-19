@@ -1,5 +1,3 @@
-const SITE_API_KEY = 'AIzaSyARsFGxzWitwWd4voBcI6lSieK0K0G4hCI'; // Admin Key
-
 const DEFAULT_PROMPT = `You are "Warrior Bot", an elite wellness and ergonomics expert for the "Work Warrior" website. 
 Your goal is to recommend 2-3 specific exercises from the website's library based on how the user feels.
 
@@ -38,7 +36,6 @@ RECOMMENDED_IDS: ["seated-neck-release", "standing-stretch"]`;
 
 class WellnessApp {
     constructor() {
-        this.siteApiKey = SITE_API_KEY; // Use the admin key
         this.apiKey = localStorage.getItem('gemini_api_key') || '';
         this.model = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
         this.systemPrompt = localStorage.getItem('system_prompt') || DEFAULT_PROMPT;
@@ -988,21 +985,16 @@ class WellnessApp {
         }
 
         if (!this.apiKey && !this.cookiesAccepted) {
-            // Optional: Auto-show banner but allow proceeding if we have a site key
+            // Optional: Auto-show banner but allow proceeding
             this.showCookieBanner();
         }
 
-        // Use User Key if available, otherwise use Site Key
-        const effectiveApiKey = this.apiKey || this.siteApiKey;
+        // PROXY MODE SUPPORT:
+        // We now allow proceeding even if this.apiKey is empty, because we have the Vercel Proxy as fallback.
+        // We only block if the user specifically entered an INVALID key pattern in the past (starts with AIzaSy_PLACEHOLDER logic).
 
-        if (!effectiveApiKey || effectiveApiKey.startsWith('AIzaSy_PLACEHOLDER')) {
-            if (!this.apiKey) {
-                this.showToast('Please enter your Gemini API Key in Settings to start. 🔑');
-                // For the developer:
-                console.warn('CRITICAL: You need to set "this.siteApiKey" in the constructor or "const SITE_API_KEY" at the top of app.js');
-            } else {
-                this.showToast('Your API Key seems invalid. Please check Settings. 🔑');
-            }
+        if (this.apiKey && this.apiKey.startsWith('AIzaSy_PLACEHOLDER')) {
+            this.showToast('Your API Key seems invalid. Please check Settings. 🔑');
             this.toggleSettings(true);
             return;
         }
@@ -1115,37 +1107,74 @@ class WellnessApp {
         }
     }
 
-    async callGemini(feeling, apiKey) {
+    async callGemini(feeling, apiKey, isRetry = false) {
         // Log outgoing request for debugging
-        console.log(`Calling Gemini with model: ${this.model} using v1beta`);
-        const usedKey = apiKey || this.apiKey;
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${usedKey}`;
+        const hasUserKey = !!(apiKey || this.apiKey);
 
+        // If no user key, we use the Vercel Proxy (Site Mode)
+        // We force Flash for stability in this mode.
+        if (!hasUserKey) {
+            if (this.model !== 'gemini-1.5-flash') {
+                console.log('Using Site Proxy: Auto-switching to gemini-1.5-flash for stability.');
+                this.model = 'gemini-1.5-flash';
+            }
+        }
+
+        console.log(`Calling Gemini with model: ${this.model} using v1beta (Retry: ${isRetry})`);
 
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: `${this.systemPrompt}\n\nUser Input: "${feeling}"`
+            let response;
+
+            if (hasUserKey) {
+                // Client-side call with User Key
+                const usedKey = apiKey || this.apiKey;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${usedKey}`;
+
+                response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: `${this.systemPrompt}\n\nUser Input: "${feeling}"`
+                            }]
+                        }],
+                        safetySettings: [
+                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
+                        ]
+                    })
+                });
+            } else {
+                // Server-side call via Vercel Proxy (No key exposure)
+                response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: this.model,
+                        contents: [{
+                            parts: [{
+                                text: `${this.systemPrompt}\n\nUser Input: "${feeling}"`
+                            }]
                         }]
-                    }],
-                    // CRITICAL FIX: Allow "medical" and "dangerous" content to prevent blocking on "my neck hurts"
-                    safetySettings: [
-                        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-                        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-                        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-                        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
-                    ]
-                })
-            });
+                    })
+                });
+            }
 
             if (!response.ok) {
                 const err = await response.json();
                 console.error('Gemini Error Response:', err);
-                throw new Error(err.error?.message || 'Gemini API Error');
+                const errorMsg = err.error?.message || 'Gemini API Error';
+
+                // Retry logic remains useful even for proxy if the proxy itself returns a model 404 (unlikely with hardcoded Flash)
+                if (!isRetry && (errorMsg.includes('not found') || errorMsg.includes('not supported') || response.status === 404)) {
+                    console.warn(`Model ${this.model} failed. Switching to gemini-1.5-flash and retrying.`);
+                    this.model = 'gemini-1.5-flash';
+                    return this.callGemini(feeling, apiKey, true);
+                }
+                throw new Error(errorMsg);
             }
 
             const data = await response.json();
@@ -1157,6 +1186,7 @@ class WellnessApp {
                 throw new Error('No response candidates returned.');
             }
             return data.candidates[0].content.parts[0].text;
+
         } catch (error) {
             console.error('Fetch Error:', error);
             throw error;
@@ -1164,14 +1194,24 @@ class WellnessApp {
     }
 
     async fetchModels() {
-        const keyToUse = this.apiKeyInput.value.trim() || this.siteApiKey;
-        if (!keyToUse) {
-            this.showToast('Please enter an API key first.');
+        const keyToUse = this.apiKeyInput.value.trim();
+
+        if (!keyToUse && !this.apiKey) {
+            // Proxy Mode Active: User has no key, so we use the backend.
+            // We cannot list models from the backend easily without a new endpoint.
+            // So we just confirm the configuration.
+            this.modelDebug.innerHTML = `<span style="color:#22c55e">✓ Using Site-Wide Optimized Configuration.</span><br>You are using the Administrator setup. No manual model selection needed.`;
+            return;
+        }
+
+        const effectiveKey = keyToUse || this.apiKey;
+        if (!effectiveKey) {
+            this.showToast('Please enter an API key to fetch custom models.');
             return;
         }
 
         this.modelDebug.innerText = 'Fetching models...';
-        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${keyToUse}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${effectiveKey}`;
 
         try {
             const response = await fetch(url);
@@ -1214,12 +1254,15 @@ class WellnessApp {
     }
 
     async optimizeModelSelection() {
-        // Auto-select the best model if the current one is invalid or outdated
-        const effectiveKey = this.apiKey || this.siteApiKey;
-        if (!effectiveKey) return;
+        // Only run optimization if the user has their OWN key.
+        // If they are using the Proxy (no key), the backend handles it (defaults to Flash).
+        if (!this.apiKey) {
+            console.log('Using Proxy Mode: Skipping client-side model optimization.');
+            return;
+        }
 
-        console.log('Optimizing model selection...');
-        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${effectiveKey}`;
+        console.log('Optimizing model selection for User Key...');
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`;
 
         try {
             const response = await fetch(url);
