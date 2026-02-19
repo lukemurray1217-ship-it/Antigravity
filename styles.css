@@ -338,12 +338,14 @@ header.scrolled .logo {
 }
 
 /* Organic Navigation */
+/* Glass Pill Nav */
 .nav-links {
     display: flex;
-    gap: 2.5rem;
+    gap: 0.5rem;
+    /* Tighter gap for pills */
     list-style: none;
     background: var(--surface-light);
-    padding: 0.5rem 1.5rem;
+    padding: 0.5rem;
     border-radius: 100px;
     border: 1px solid var(--border);
 }
@@ -353,12 +355,23 @@ header.scrolled .logo {
     text-decoration: none;
     font-weight: 500;
     font-size: 0.9rem;
-    transition: color 0.3s ease;
+    transition: all 0.3s ease;
+    padding: 0.5rem 1.2rem;
+    border-radius: 100px;
+    position: relative;
+    z-index: 1;
 }
 
-.nav-links a:hover,
+.nav-links a:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.05);
+}
+
 .nav-links a.active {
-    color: var(--primary);
+    color: var(--bg);
+    background: var(--primary);
+    box-shadow: 0 0 15px rgba(168, 195, 181, 0.4);
+    font-weight: 700;
 }
 
 /* Auth Modal */
@@ -699,6 +712,16 @@ header.scrolled .logo {
     display: flex;
     flex-direction: column;
     align-items: center;
+    background-attachment: fixed;
+    /* Parallax Effect */
+}
+
+@media (pointer: coarse) {
+
+    /* Disable parallax on touch devices for performance */
+    .hero-section {
+        background-attachment: scroll;
+    }
 }
 
 /* Page Specific Heros */
@@ -2541,4 +2564,74 @@ textarea:focus {
     ::-webkit-scrollbar-thumb:hover {
         background: var(--text-muted);
     }
+}
+
+/* --- Global Footer --- */
+.site-footer {
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    padding: 4rem 2rem;
+    margin-top: auto;
+    /* Push to bottom */
+}
+
+.footer-content {
+    max-width: var(--container-max);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    text-align: center;
+}
+
+.footer-logo img {
+    height: 40px;
+    opacity: 0.7;
+    filter: grayscale(100%);
+    transition: all 0.3s ease;
+}
+
+.footer-logo:hover img {
+    opacity: 1;
+    filter: none;
+}
+
+.footer-links {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.footer-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.footer-links a:hover {
+    color: var(--primary);
+}
+
+.footer-bottom {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 2rem;
+    border-top: 1px solid var(--border-bright);
+    padding-top: 2rem;
+    width: 100%;
+}
+
+/* Scroll Reveal */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
