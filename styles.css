@@ -686,15 +686,29 @@ textarea {
     font-weight: 700;
     font-size: 1rem;
     cursor: pointer;
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s ease;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s ease, box-shadow 0.3s ease;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-height: 48px;
+    /* Mobile touch target */
+    box-shadow: var(--shadow-glow);
 }
 
 .primary-btn:hover {
     transform: scale(1.05);
     background: var(--primary-light);
+    box-shadow: 0 0 20px rgba(168, 195, 181, 0.4);
+}
+
+.primary-btn:active {
+    transform: scale(0.98);
+}
+
+/* Global Focus for Accessibility */
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 4px;
 }
 
 /* Organized Content Areas */
@@ -1107,10 +1121,11 @@ textarea:focus {
     align-items: center;
     justify-content: center;
     font-size: 1.2rem;
-    margin-left: 0.5rem;
+    color: var(--text-muted);
 }
 
 .icon-btn:hover {
+    background: rgba(168, 195, 181, 0.1);
     border-color: var(--primary);
     color: var(--primary);
     transform: translateY(-2px);
@@ -1120,17 +1135,32 @@ textarea:focus {
 .secondary-btn {
     width: 100%;
     padding: 1rem;
-    background: transparent;
-    border: 1px solid var(--primary);
+    background: rgba(255, 255, 255, 0.03);
+    /* Slight glass background */
+    border: 1px solid var(--border-bright);
     color: var(--primary);
     border-radius: var(--radius-sm);
     cursor: pointer;
     font-weight: 600;
     transition: all 0.3s ease;
+    min-height: 48px;
+    /* Mobile touch target */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
 .secondary-btn:hover {
-    background: rgba(152, 180, 166, 0.1);
+    background: rgba(168, 195, 181, 0.15);
+    border-color: var(--primary);
+    color: #fff;
+    /* Brighter text on hover */
+    box-shadow: 0 0 15px rgba(168, 195, 181, 0.2);
+}
+
+.secondary-btn:active {
+    transform: scale(0.98);
 }
 
 @keyframes fadeOut {
