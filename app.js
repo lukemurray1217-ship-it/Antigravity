@@ -1370,7 +1370,13 @@ class WellnessApp {
     }
 
     renderResult(text) {
+        // Toggle Views: Hide Hero, Show Result
+        const heroSection = document.querySelector('.hero-section');
+        if (heroSection) heroSection.classList.add('hidden');
         this.resultSection.classList.remove('hidden');
+
+        // Scroll to top to ensure the user sees the start of the protocol
+        window.scrollTo({ top: 0, behavior: 'smooth' });
 
         let protocol = null;
         let displayMsg = '';
@@ -1385,18 +1391,19 @@ class WellnessApp {
             recommendedIds = protocol.exercises.map(e => e.id);
         } catch (e) {
             console.warn("JSON Parse Failed, falling back to legacy regex or text search", e);
-            // Fallback logic could go here, or just show raw text
             displayMsg = text;
-            // Attempt regex extraction as backup
             const idMatch = text.match(/RECOMMENDED_IDS:\s*\[(.*?)\]/s);
             if (idMatch) {
                 recommendedIds = idMatch[1].split(',').map(id => id.trim().replace(/['"“”‘’]/g, ''));
             }
         }
 
-        // Render Protocol Card
+        // Render Protocol Card with Back Button
         this.geminiResponse.innerHTML = `
             <div class="protocol-card">
+                <button id="back-to-home" class="text-btn" style="margin-bottom: 1.5rem; padding: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted);">
+                    <span>←</span> Back to Home
+                </button>
                 <div class="protocol-header">
                     <span class="protocol-badge">Warrior Protocol</span>
                     <h3>${protocol ? protocol.protocol_name : 'Custom Routine'}</h3>
@@ -1407,6 +1414,11 @@ class WellnessApp {
             </div>
         `;
 
+        // Attach listener to new back button
+        document.getElementById('back-to-home').addEventListener('click', () => {
+            this.resetView();
+        });
+
         // Render cards
         this.exerciseList.innerHTML = '';
         this.exerciseList.className = 'exercise-sections-list'; // Ensure class
@@ -1415,13 +1427,13 @@ class WellnessApp {
         // Prepend this to the exercise list container, or place it before the grid
         // Here we will insert it as the first child of exerciseList for visibility
         this.exerciseList.insertAdjacentHTML('afterbegin', quickActionHtml);
-    }
+
 
         selectedExercises.forEach((ex, index) => {
-    const card = document.createElement('div');
-    card.className = 'exercise-card';
+            const card = document.createElement('div');
+            card.className = 'exercise-card';
 
-    card.innerHTML = `
+            card.innerHTML = `
                 <div class="card-icon">${ex.icon}</div>
                 <h3>${ex.title}</h3>
                 <span class="category-tag">Exercise</span>
@@ -1431,58 +1443,74 @@ class WellnessApp {
                 </div>
                 <a href="exercises.html#${ex.id}" class="secondary-btn" style="margin-top: 1rem; text-decoration: none; text-align: center;">View Details</a>
             `;
-    this.exerciseList.appendChild(card);
-});
+            this.exerciseList.appendChild(card);
+        });
 
-// Scroll to results
-this.resultSection.scrollIntoView({ behavior: 'smooth' });
+        // Scroll to results
+        this.resultSection.scrollIntoView({ behavior: 'smooth' });
+        // Initialize Scroll Reveal for new elements
+        this.initRevealOnScroll();
     }
 
-saveToHistory(message, exercises) {
-    if (!this.currentUser) return;
+    resetView() {
+        // Hide Result, Show Hero
+        const heroSection = document.querySelector('.hero-section');
+        if (heroSection) heroSection.classList.remove('hidden');
+        this.resultSection.classList.add('hidden');
 
-    const historyItem = {
-        timestamp: new Date().getTime(),
-        message: message,
-        exercises: exercises.map(ex => ({ id: ex.id, title: ex.title, icon: ex.icon })) // Store ID for linking
-    };
+        // Clear previous results to avoid flashing old content next time
+        this.geminiResponse.innerHTML = '';
+        this.exerciseList.innerHTML = '';
 
-    this.history.push(historyItem);
-    localStorage.setItem('warrior_history_' + this.currentUser.email, JSON.stringify(this.history));
-}
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
-// --- Weekly & Group Logic ---
+    saveToHistory(message, exercises) {
+        if (!this.currentUser) return;
 
-getWeeklyRecommendation() {
-    // Simple logic to rotate a weekly featured exercise
-    const weekNum = Math.floor(new Date().getTime() / (1000 * 60 * 60 * 24 * 7));
-    const index = weekNum % EXERCISES.length;
-    return EXERCISES[index];
-}
+        const historyItem = {
+            timestamp: new Date().getTime(),
+            message: message,
+            exercises: exercises.map(ex => ({ id: ex.id, title: ex.title, icon: ex.icon })) // Store ID for linking
+        };
 
-getGroupWeeklyPlan(groupCode) {
-    // Deterministic 5-day plan based on group code
-    let seed = 0;
-    for (let i = 0; i < groupCode.length; i++) seed += groupCode.charCodeAt(i);
+        this.history.push(historyItem);
+        localStorage.setItem('warrior_history_' + this.currentUser.email, JSON.stringify(this.history));
+    }
 
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-    return days.map((day, i) => {
-        const exIndex = (seed + i) % EXERCISES.length;
-        return { day, exercise: EXERCISES[exIndex] };
-    });
-}
+    // --- Weekly & Group Logic ---
 
-renderGroupPlan(groupCode) {
-    if (!this.groupPlanArea) return;
+    getWeeklyRecommendation() {
+        // Simple logic to rotate a weekly featured exercise
+        const weekNum = Math.floor(new Date().getTime() / (1000 * 60 * 60 * 24 * 7));
+        const index = weekNum % EXERCISES.length;
+        return EXERCISES[index];
+    }
 
-    const plan = this.getGroupWeeklyPlan(groupCode);
-    const todayIndex = new Date().getDay() - 1; // 0-indexed Mon-Fri (assuming 1-5)
+    getGroupWeeklyPlan(groupCode) {
+        // Deterministic 5-day plan based on group code
+        let seed = 0;
+        for (let i = 0; i < groupCode.length; i++) seed += groupCode.charCodeAt(i);
 
-    // --- CLEAN INTERFACE: TODAY'S FOCUS ---
-    let todaysFocusHtml = '';
-    if (todayIndex >= 0 && todayIndex < 5) {
-        const todaysItem = plan[todayIndex];
-        todaysFocusHtml = `
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        return days.map((day, i) => {
+            const exIndex = (seed + i) % EXERCISES.length;
+            return { day, exercise: EXERCISES[exIndex] };
+        });
+    }
+
+    renderGroupPlan(groupCode) {
+        if (!this.groupPlanArea) return;
+
+        const plan = this.getGroupWeeklyPlan(groupCode);
+        const todayIndex = new Date().getDay() - 1; // 0-indexed Mon-Fri (assuming 1-5)
+
+        // --- CLEAN INTERFACE: TODAY'S FOCUS ---
+        let todaysFocusHtml = '';
+        if (todayIndex >= 0 && todayIndex < 5) {
+            const todaysItem = plan[todayIndex];
+            todaysFocusHtml = `
                 <div class="todays-focus-container">
                     <div class="todays-focus-header">
                         <span>📅 Today's Group Focus</span>
@@ -1497,9 +1525,9 @@ renderGroupPlan(groupCode) {
                     </div>
                 </div>
             `;
-    } else {
-        // Weekend fallback
-        todaysFocusHtml = `
+        } else {
+            // Weekend fallback
+            todaysFocusHtml = `
                 <div class="todays-focus-container">
                     <div class="todays-focus-header">
                         <span>Weekend Vibes</span>
@@ -1507,9 +1535,9 @@ renderGroupPlan(groupCode) {
                     <p style="color: var(--text-muted);">Rest and recover. See you Monday!</p>
                 </div>
              `;
-    }
+        }
 
-    this.groupPlanArea.innerHTML = `
+        this.groupPlanArea.innerHTML = `
             ${todaysFocusHtml}
             <h3 style="margin-bottom: 1.5rem; text-align: center;">This Week's Schedule</h3>
             <div class="weekly-plan-grid">
@@ -1523,27 +1551,27 @@ renderGroupPlan(groupCode) {
                 `).join('')}
             </div>
         `;
-    this.initRevealOnScroll(); // Re-init to catch new elements
-}
+        this.initRevealOnScroll(); // Re-init to catch new elements
+    }
 
-initRevealOnScroll() {
-    const observerOptions = {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-    };
+    initRevealOnScroll() {
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
 
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-            }
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => {
+            observer.observe(el);
         });
-    }, observerOptions);
-
-    document.querySelectorAll('.reveal').forEach(el => {
-        observer.observe(el);
-    });
-}
+    }
 }
 
 // Initialize app
