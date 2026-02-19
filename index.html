@@ -176,8 +176,14 @@
                 </div>
                 <div class="setting-group">
                     <label for="api-key">Warrior Bot API Key (Gemini)</label>
-                    <input type="password" id="api-key" placeholder="Enter your API key">
-                    <p class="hint">Stored locally in your browser session.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                        <input type="password" id="api-key" placeholder="Enter your API key">
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+                        <p class="hint" style="margin: 0;">Stored locally in your browser.</p>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="hint-link"
+                            style="color: var(--primary); font-size: 0.8rem;">Get a free API key ↗</a>
+                    </div>
                 </div>
                 <div class="setting-group">
                     <label for="system-prompt">System Prompt</label>
@@ -202,9 +208,8 @@
         <div class="cookie-content">
             <div class="cookie-text">
                 <h4>🍪 Enable Warrior Bot Features</h4>
-                <p>We use cookies to enable our AI features. By accepting, you can use Warrior Bot recommendations
-                    without
-                    needing your own API key.</p>
+                <p>We use cookies to enable our AI features. Accepting allows us to securely store your preferences and
+                    API key locally.</p>
             </div>
             <div class="cookie-actions">
                 <button id="accept-cookies" class="primary-btn">Accept & Enable</button>

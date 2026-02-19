@@ -1,34 +1,44 @@
+const SITE_API_KEY = 'AIzaSyARsFGxzWitwWd4voBcI6lSieK0K0G4hCI'; // Admin Key
+
 const DEFAULT_PROMPT = `You are "Warrior Bot", an elite wellness and ergonomics expert for the "Work Warrior" website. 
 Your goal is to recommend 2-3 specific exercises from the website's library based on how the user feels.
 
 STRICT RULE: ONLY recommend exercises from the provided list below. Do NOT suggest exercises outside this list.
 
-CRITICAL INSTRUCTION:
+CRITICAL INSTRUCTION - MEDICAL/PAIN QUERIES:
+Users often say "my back hurts" or "I have neck pain". You MUST NOT refuse to answer. 
+- You are not a doctor, but you ARE a wellness coach.
+- Instead of refusing, say: "While I'm not a doctor, for that kind of tension, I recommend..." or "Let's try to gently relieve that area with..."
+- ALWAYS provide a gentle movement solution.
+
+CRITICAL INSTRUCTION - CONTEXT:
+If the user's input includes a "Context: ..." section about their Group Focus, you MUST mention that exercise in your response as a gentle reminder ("Don't forget your group's focus today is...").
+
+CRITICAL INSTRUCTION - MAKING CONNECTIONS:
 You must ALWAYS find a connection to one of the exercises, no matter what the user says.
 - If the input is physical (e.g., "my neck hurts"), recommend the direct physical solution.
-- If the input is emotional (e.g., "I'm sad", "I'm angry"), connect it to a physical release (e.g., "Open your chest to release grief", "Shake it out to release anger").
-- If the input is abstract or nonsense (e.g., "banana", "I hate my boss", "aliens"), find a creative metaphorical bridge (e.g., "That sounds chaotic! Ground yourself with a Tree Pose", or "Let's stretch out that frustration").
-- NEVER say "I cannot help" or "I don't understand". BE CREATIVE. EVERYTHING is solvable with movement.
+- If the input is emotional (e.g., "I'm sad", "I'm angry"), connect it to a physical release.
+- If the input is abstract or nonsense, find a creative metaphorical bridge.
 
 CUSTOMIZATION RULE:
-For EACH recommended exercise, you MUST provide a "Warrior Tweak"—a specialized slight adjustment or focus point based on *exactly* what the user said.
-Example: "For the Seated Twist, since you mentioned 'lower back pain', focus on lengthening your spine *before* you twist to avoid compression."
+For EACH recommended exercise, you MUST provide a "Warrior Tweak"—a specialized slight adjustment or focus point.
 
 Available Exercises:
 \${JSON.stringify(EXERCISES)}
 
 Response Format:
-1. A brief, encouraging message.
+1. A brief, encouraging message (referencing the Group Focus if applicable).
 2. The recommendations, with the "Warrior Tweak" clearly listed for each.
 3. CRITICAL: Include the exact string "RECOMMENDED_IDS: ["id1", "id2"]" at the end of your response.
 
 Example Opening:
-"Warrior Bot here. Even for something like that, movement is the answer..."
+"Warrior Bot here. I hear you on the neck tension. Since your group is focusing on the 'Seated Neck Release' today, let's start there..."
 
-RECOMMENDED_IDS: ["seated-twist", "standing-stretch"]`;
+RECOMMENDED_IDS: ["seated-neck-release", "standing-stretch"]`;
 
 class WellnessApp {
     constructor() {
+        this.siteApiKey = SITE_API_KEY; // Use the admin key
         this.apiKey = localStorage.getItem('gemini_api_key') || '';
         this.model = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
         this.systemPrompt = localStorage.getItem('system_prompt') || DEFAULT_PROMPT;
@@ -39,8 +49,9 @@ class WellnessApp {
 
         // Cookie Logic
         this.cookiesAccepted = localStorage.getItem('warrior_cookies_accepted') === 'true';
-        this.siteApiKey = 'AIzaSyAXozqxQrQFmQ7w37k6JGWMXMHwbGImFjo'; // User provided site-wide key
 
+        // Initialize Banner FIRST so elements exist for initElements
+        this.initCookieBanner();
 
         this.initElements();
         this.initEventListeners();
@@ -49,9 +60,6 @@ class WellnessApp {
         this.initGroups();
         this.checkForSocialNotifications();
         this.initFullscreenPersistence();
-        this.initCookieBanner();
-        this.initFullscreenPersistence();
-        this.initCookieBanner();
         this.initRevealOnScroll();
         this.checkForInviteLink();
     }
@@ -76,7 +84,7 @@ class WellnessApp {
                         localStorage.setItem('warrior_users', JSON.stringify(users));
                         // Clear param to clean URL
                         window.history.replaceState({}, document.title, window.location.pathname);
-                        alert('You have successfully joined the group!');
+                        this.showToast('You have successfully joined the group!', 4000);
                         this.initGroups();
                     }
                 }
@@ -243,7 +251,7 @@ class WellnessApp {
 
         // Leader Toolbar Listeners
         if (this.generateCodeBtnLine) this.generateCodeBtnLine.addEventListener('click', () => this.handleGenerateGroupCode());
-        if (this.generateCodeBtnLine) this.generateCodeBtnLine.addEventListener('click', () => this.handleGenerateGroupCode());
+
         if (this.copyCodeBtn) this.copyCodeBtn.addEventListener('click', () => this.handleCopyCode());
         if (this.copyInviteLinkBtn) this.copyInviteLinkBtn.addEventListener('click', () => this.handleCopyInviteLink());
 
@@ -330,6 +338,53 @@ class WellnessApp {
         this.toggleAuthModal(true);
     }
 
+    showToast(message, duration = 0) {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = 'social-toast';
+        toast.innerHTML = `
+            <div class="toast-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Warrior Update</span>
+                <span class="close-toast" style="cursor:pointer; font-size:1.2rem;">&times;</span>
+            </div>
+            <div class="toast-body" style="margin: 0.5rem 0;">${message}</div>
+            <button class="toast-dismiss-btn" style="
+                background: rgba(255,255,255,0.2);
+                border: 1px solid rgba(255,255,255,0.4);
+                color: white;
+                width: 100%;
+                padding: 6px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 0.9rem;
+                font-weight: 500;
+            ">Okay</button>
+        `;
+        container.appendChild(toast);
+
+        // Sound effect (subtle pop)
+        const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU');
+        // For now, silent or simple visual is enough.
+
+        const remove = () => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(100%)';
+            setTimeout(() => toast.remove(), 500);
+        };
+
+        toast.querySelector('.close-toast').addEventListener('click', remove);
+        toast.querySelector('.toast-dismiss-btn').addEventListener('click', remove);
+
+        // User requested ALL messages stay until clicked.
+        // We strictly ignore duration and auto-dismissal.
+    }
+
     handleAuth() {
         const email = this.authEmail.value;
         const password = this.authPassword.value;
@@ -337,16 +392,16 @@ class WellnessApp {
 
         if (this.isSignup) {
             if (users[email]) {
-                alert('User already exists!');
+                this.showToast('User already exists!');
                 return;
             }
             const role = this.authRoleSelect ? this.authRoleSelect.value : 'member';
-            users[email] = { password, role };
+            users[email] = { password, role, hasLoggedInBefore: true }; // Mark as logged in immediately
             localStorage.setItem('warrior_users', JSON.stringify(users));
-            alert('Account created successfully! Logging you in...');
+            this.showToast('Account created! Welcome to the team. 🚀');
         } else {
             if (!users[email] || users[email].password !== password) {
-                alert('Invalid email or password.');
+                this.showToast('Invalid email or password.');
                 return;
             }
         }
@@ -357,6 +412,15 @@ class WellnessApp {
         // Load history for this user
         this.history = JSON.parse(localStorage.getItem('warrior_history_' + this.currentUser.email)) || [];
 
+        // First Time vs Welcome Back Logic
+        if (!users[email].hasLoggedInBefore) {
+            this.showToast('Welcome to the Warrior Team! 🚀', 5000);
+            users[email].hasLoggedInBefore = true;
+            localStorage.setItem('warrior_users', JSON.stringify(users));
+        } else {
+            this.showToast(`Welcome back, ${email.split('@')[0]}!`, 4000);
+        }
+
         // Check for pending join code
         const pendingCode = sessionStorage.getItem('pending_join_code');
         if (pendingCode) {
@@ -365,7 +429,7 @@ class WellnessApp {
                 if (confirm(`Do you want to join the group "${pendingCode}"?`)) {
                     users[email].groupCode = pendingCode;
                     localStorage.setItem('warrior_users', JSON.stringify(users));
-                    alert('You have successfully joined the group!');
+                    this.showToast('You have successfully joined the group!');
                 }
             }
             sessionStorage.removeItem('pending_join_code');
@@ -477,6 +541,16 @@ class WellnessApp {
                         if (this.newsletterTitle) this.newsletterTitle.innerText = newsletter.title;
                         if (this.newsletterDate) this.newsletterDate.innerText = 'Sent ' + new Date(newsletter.timestamp).toLocaleDateString();
                         if (this.viewNewsletterBtn) this.viewNewsletterBtn.classList.remove('hidden');
+
+                        // Newsletter Notification Logic
+                        const lastSeen = localStorage.getItem('warrior_last_newsletter_' + userData.groupCode);
+                        if (newsletter.timestamp !== lastSeen) {
+                            // Delay slightly so it doesn't overlap with welcome toast
+                            setTimeout(() => {
+                                this.showToast('📧 New Weekly Report available!', 5000);
+                            }, 2000);
+                            localStorage.setItem('warrior_last_newsletter_' + userData.groupCode, newsletter.timestamp);
+                        }
                     } else {
                         if (this.noNewsletterMsg) this.noNewsletterMsg.classList.remove('hidden');
                         if (this.latestNewsletterCard) this.latestNewsletterCard.classList.add('hidden');
@@ -508,7 +582,7 @@ class WellnessApp {
     handleCreateGroup() {
         const groupName = this.createGroupNameInput.value.trim();
         if (!groupName) {
-            alert('Please enter a group name.');
+            this.showToast('Please enter a group name.');
             return;
         }
 
@@ -519,7 +593,7 @@ class WellnessApp {
         users[this.currentUser.email].groupName = groupName;
         localStorage.setItem('warrior_users', JSON.stringify(users));
 
-        alert(`Group "${groupName}" created! Your code is: ${code}`);
+        this.showToast(`Group "${groupName}" created! Code: ${code}`, 5000);
         this.initGroups();
     }
 
@@ -550,7 +624,7 @@ class WellnessApp {
         users[this.currentUser.email].vibe = { quote, emoji };
         localStorage.setItem('warrior_users', JSON.stringify(users));
 
-        alert('Vibe broadcasted! Your group will see this next time they log in.');
+        this.showToast('Vibe broadcasted to your group! 📡');
         this.initGroups();
     }
 
@@ -572,7 +646,7 @@ class WellnessApp {
             }, 2000);
         }).catch(err => {
             console.error('Failed to copy: ', err);
-            alert('Failed to copy code. Please select and copy manually.');
+            this.showToast('Failed to copy code. Please copy manually.');
         });
     }
 
@@ -582,7 +656,7 @@ class WellnessApp {
         const code = userData.groupCode || this.newGroupCodeText.innerText;
 
         if (!code || code === '...') {
-            alert('No active group code found to share.');
+            this.showToast('No active group code found to share.');
             return;
         }
 
@@ -596,7 +670,7 @@ class WellnessApp {
             }, 2000);
         }).catch(err => {
             console.error('Failed to copy link: ', err);
-            alert('Failed to copy link. Code is: ' + code);
+            this.showToast('Failed to copy link. Code is: ' + code);
         });
     }
 
@@ -690,7 +764,7 @@ class WellnessApp {
         };
 
         localStorage.setItem('newsletter_' + userData.groupCode, JSON.stringify(newsletter));
-        alert('Newsletter generated and broadcasted to your group!');
+        this.showToast('Newsletter generated and broadcasted! 📨');
         this.initGroups();
     }
 
@@ -899,14 +973,14 @@ class WellnessApp {
         localStorage.setItem('gemini_model', this.model);
         localStorage.setItem('system_prompt', this.systemPrompt);
 
-        alert('Configuration saved!');
+        this.showToast('Configuration saved! ✅');
         this.toggleSettings(false);
     }
 
     async handleGeminiRequest() {
         const feeling = this.feelingInput.value.trim();
         if (!feeling) {
-            alert('Please tell me how you are feeling first.');
+            this.showToast('Please tell me how you are feeling first.');
             return;
         }
 
@@ -916,17 +990,15 @@ class WellnessApp {
         }
 
         // Use User Key if available, otherwise use Site Key
-        // NOTE for User: We allow site key usage even if cookies aren't explicitly accepted in UI yet, 
-        // to reduce friction. Ensure this aligns with your privacy policy.
         const effectiveApiKey = this.apiKey || this.siteApiKey;
 
         if (!effectiveApiKey || effectiveApiKey.startsWith('AIzaSy_PLACEHOLDER')) {
             if (!this.apiKey) {
-                alert('Site-wide API Key is missing. Please ask the administrator to configure it.');
+                this.showToast('Please enter your Gemini API Key in Settings to start. 🔑');
                 // For the developer:
                 console.warn('CRITICAL: You need to set "this.siteApiKey" in the constructor or "const SITE_API_KEY" at the top of app.js');
             } else {
-                alert('Your personal API Key seems invalid or missing.');
+                this.showToast('Your API Key seems invalid. Please check Settings. 🔑');
             }
             this.toggleSettings(true);
             return;
@@ -934,8 +1006,26 @@ class WellnessApp {
 
         this.setLoading(true);
 
+        // --- WEEKLY FOCUS INJECTION ---
+        // Get the user's group code to find their weekly plan
+        let contextAddition = "";
+        const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
+        if (this.currentUser && users[this.currentUser.email] && users[this.currentUser.email].groupCode) {
+            const groupCode = users[this.currentUser.email].groupCode;
+            const plan = this.getGroupWeeklyPlan(groupCode);
+            const todayIndex = new Date().getDay() - 1; // 0=Mon
+
+            if (todayIndex >= 0 && todayIndex < 5) {
+                const todaysItem = plan[todayIndex];
+                contextAddition = `\n\nCONTEXT OBSERVED: The user is in a group (Code: ${groupCode}). Their designated "Group Focus Exercise" for TODAY is "${todaysItem.exercise.title}".\nINSTRUCTION: You MUST mention this specific exercise ("${todaysItem.exercise.title}") in your response as a reminder, even if you also recommend other things. Connect it to their current feeling if possible.`;
+            }
+        }
+
+        // Pass a modified "feeling" string that effectively appends context without changing system prompt permanently
+        const augmentedInput = `${feeling} ${contextAddition}`;
+
         try {
-            const response = await this.callGemini(feeling, effectiveApiKey);
+            const response = await this.callGemini(augmentedInput, effectiveApiKey);
             this.renderResult(response);
         } catch (error) {
             console.error(error);
@@ -944,8 +1034,10 @@ class WellnessApp {
                 errorMsg += '\n\nTIP: Your API key might not have access to this specific model name. Try clicking the "Check Available Models" button in Settings to find models your key supports.';
             } else if (errorMsg.includes('API key not valid')) {
                 errorMsg += '\n\nThe configured API key is invalid.';
+            } else if (errorMsg.includes('safety filters')) {
+                errorMsg += '\n\nThe AI blocked this request due to safety filters. Try rephrasing without strong medical terms.';
             }
-            alert('Warrior Bot failed to generate a recommendation: ' + errorMsg);
+            this.showToast('Warrior Bot failed: ' + errorMsg, 6000);
         } finally {
             this.setLoading(false);
         }
@@ -997,7 +1089,7 @@ class WellnessApp {
             this.cookiesAccepted = true;
             localStorage.setItem('warrior_cookies_accepted', 'true');
             localStorage.removeItem('warrior_cookies_declined');
-            alert('Cookies accepted! You can now use Gemini features without an API key.');
+            this.showToast('Cookies accepted! AI features enabled.');
 
             // If user has entered text, auto-trigger the recommendation
             if (this.feelingInput && this.feelingInput.value.trim()) {
@@ -1027,8 +1119,6 @@ class WellnessApp {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${usedKey}`;
 
 
-
-
         try {
             const response = await fetch(url, {
                 method: 'POST',
@@ -1038,7 +1128,14 @@ class WellnessApp {
                         parts: [{
                             text: `${this.systemPrompt}\n\nUser Input: "${feeling}"`
                         }]
-                    }]
+                    }],
+                    // CRITICAL FIX: Allow "medical" and "dangerous" content to prevent blocking on "my neck hurts"
+                    safetySettings: [
+                        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+                        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+                        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+                        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
+                    ]
                 })
             });
 
@@ -1049,16 +1146,23 @@ class WellnessApp {
             }
 
             const data = await response.json();
+            // Check if prompt was blocked
+            if (!data.candidates || data.candidates.length === 0) {
+                if (data.promptFeedback && data.promptFeedback.blockReason) {
+                    throw new Error(`Blocked by safety filters: ${data.promptFeedback.blockReason}`);
+                }
+                throw new Error('No response candidates returned.');
+            }
             return data.candidates[0].content.parts[0].text;
         } catch (error) {
-            console.error('Fecth Error:', error);
+            console.error('Fetch Error:', error);
             throw error;
         }
     }
 
     async fetchModels() {
         if (!this.apiKeyInput.value.trim()) {
-            alert('Please enter an API key first.');
+            this.showToast('Please enter an API key first.');
             return;
         }
 
@@ -1074,15 +1178,16 @@ class WellnessApp {
 
             const models = data.models
                 .map(m => m.name.replace('models/', ''))
-                .filter(name => name.includes('gemini') && name.includes('1.5'));
+                .filter(name => name.toLowerCase().includes('gemini'));
 
             if (models.length === 0) {
-                this.modelDebug.innerHTML = '<span style="color:#ef4444">No Gemini 1.5 models found. Check your API key permissions.</span>';
+                this.modelDebug.innerHTML = '<span style="color:#ef4444">No Gemini models found. Check your API key permissions.</span>';
                 return;
             }
 
             // Clear and repopulate dropdown
             this.modelInput.innerHTML = '';
+            models.sort().reverse();
             models.forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m;
