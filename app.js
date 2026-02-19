@@ -92,6 +92,23 @@ class WellnessApp {
                 // If not logged in, switch to login view and pre-fill code logic if we had a dedicated join flow
                 // For now, simpler: alert user to login first
                 sessionStorage.setItem('pending_join_code', joinCode);
+                this.systemPrompt = `You are "Warrior Bot", an elite, empathetic wellness coach. 
+        Your Style: Professional, clinical but warm, concise, and action-oriented.
+        Your Output Format:
+        - Use clean Markdown.
+        - Use bullet points for steps.
+        - **BOLD** key terms.
+        - Be ABRIDGED. Do not write long paragraphs. Get to the point.
+        
+        Your Mission:
+        1. Accept the user's "feeling" (e.g., "my neck hurts", "I'm stressed").
+        2. Recommend 2-3 specific exercises from the list below.
+        3. Explain WHY in 1 short sentence.
+        4. ALWAYS end with a JSON-like array of IDs: RECOMMENDED_IDS: [id1, id2]
+        
+        Available Exercises (ID - Title - Benefit):
+        ${EXERCISES.map(e => `- ${e.id}: ${e.title} (${e.benefit})`).join('\n')}
+        `;
                 // We'll let them login normally, then check pending code
                 // Or we can pre-open auth modal
                 this.toggleAuthModal(true);
@@ -1395,7 +1412,12 @@ class WellnessApp {
             });
         }
 
-        this.geminiResponse.innerHTML = `<p>${displayMsg.replace(/\n/g, '<br>')}</p>`;
+        this.geminiResponse.innerHTML = `
+            <div class="ai-result-card">
+                <h3>Warrior Bot Plan</h3>
+                ${marked.parse(displayMsg)} 
+            </div>
+        `;
 
         // Render cards
         this.exerciseList.innerHTML = '';
