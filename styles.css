@@ -88,6 +88,13 @@ h4 {
     font-size: clamp(1.1rem, 2vw + 0.5rem, 1.5rem);
 }
 
+.hint {
+    font-size: 1.1rem;
+    /* Instructions made clear and large */
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
 /* Base Layout */
 .app-container {
     width: 100%;
@@ -697,12 +704,7 @@ header.scrolled .logo {
     -webkit-text-fill-color: transparent;
 }
 
-margin-bottom: 1.5rem;
-background: linear-gradient(135deg, #fff, var(--primary-light));
--webkit-background-clip: text;
-background-clip: text;
--webkit-text-fill-color: transparent;
-}
+
 
 .hero-section p {
     font-size: 1.35rem;
@@ -1478,12 +1480,7 @@ textarea:focus {
         padding: 1rem;
         margin: 0.5rem;
 
-        .hint {
-            font-size: 1rem;
-            /* Instructions made clear and large */
-            color: var(--text-muted);
-            line-height: 1.6;
-        }
+
 
         .bottom-auth-grid {
             grid-template-columns: 1fr;
@@ -2249,3 +2246,4 @@ textarea:focus {
     ::-webkit-scrollbar-thumb:hover {
         background: var(--text-muted);
     }
+}
