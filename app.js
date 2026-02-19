@@ -1020,7 +1020,9 @@ class WellnessApp {
         const augmentedInput = `${feeling} ${contextAddition}`;
 
         try {
-            const response = await this.callGemini(augmentedInput, effectiveApiKey);
+            // FIX: removed effectiveApiKey since it is no longer defined. 
+            // callGemini handles null key by using the Proxy.
+            const response = await this.callGemini(augmentedInput, this.apiKey);
             this.renderResult(response);
         } catch (error) {
             console.error(error);
