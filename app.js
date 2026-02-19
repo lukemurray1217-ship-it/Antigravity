@@ -1114,12 +1114,9 @@ class WellnessApp {
         const hasUserKey = !!(apiKey || this.apiKey);
 
         // If no user key, we use the Vercel Proxy (Site Mode)
-        // We force Flash for stability in this mode.
+        // We TRUST the optimization logic now instead of hardcoding Flash.
         if (!hasUserKey) {
-            if (this.model !== 'gemini-1.5-flash') {
-                console.log('Using Site Proxy: Auto-switching to gemini-1.5-flash for stability.');
-                this.model = 'gemini-1.5-flash';
-            }
+            console.log('Using Site Proxy for API call.');
         }
 
         console.log(`Calling Gemini with model: ${this.model} using v1beta (Retry: ${isRetry})`);
@@ -1195,117 +1192,125 @@ class WellnessApp {
         }
     }
 
-    async fetchModels() {
-        const keyToUse = this.apiKeyInput.value.trim();
-
-        if (!keyToUse && !this.apiKey) {
-            // Proxy Mode Active: User has no key, so we use the backend.
-            // We cannot list models from the backend easily without a new endpoint.
-            // So we just confirm the configuration.
-            this.modelDebug.innerHTML = `<span style="color:#22c55e">✓ Using Site-Wide Optimized Configuration.</span><br>You are using the Administrator setup. No manual model selection needed.`;
-            return;
+    async getAvailableModels() {
+        // Helper to get models either directly or via Proxy
+        let url;
+        if (this.apiKey) {
+            url = `https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`;
+        } else {
+            // Proxy Mode
+            url = '/api/models';
         }
-
-        const effectiveKey = keyToUse || this.apiKey;
-        if (!effectiveKey) {
-            this.showToast('Please enter an API key to fetch custom models.');
-            return;
-        }
-
-        this.modelDebug.innerText = 'Fetching models...';
-        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${effectiveKey}`;
 
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error('Failed to fetch models: ' + response.statusText);
             const data = await response.json();
 
-            if (!data.models) throw new Error('No models found for this API key. Ensure the Gemini API is enabled in your Google AI Studio project.');
+            if (!data.models) return [];
 
-            const models = data.models
+            return data.models
                 .map(m => m.name.replace('models/', ''))
                 .filter(name => name.toLowerCase().includes('gemini'));
+        } catch (e) {
+            console.error('Error fetching models:', e);
+            return [];
+        }
+    }
 
-            if (models.length === 0) {
-                this.modelDebug.innerHTML = '<span style="color:#ef4444">No Gemini models found. Check your API key permissions.</span>';
-                return;
-            }
+    async fetchModels() {
+        const keyToUse = this.apiKeyInput.value.trim();
 
-            // Clear and repopulate dropdown
-            this.modelInput.innerHTML = '';
-            models.sort().reverse();
-            models.forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m;
-                opt.innerText = m;
-                this.modelInput.appendChild(opt);
+        // If user is typing a key, we try to use that. 
+        // If empty and no stored key, we use Proxy.
+
+        if (keyToUse) {
+            // Manual check with entered key
+            const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${keyToUse}`;
+            // ... existing manual logic could go here but let's simplify by using shared helper for the stored state
+            // For the input search specifically:
+            this.modelDebug.innerText = 'Checking key...';
+            fetch(url).then(res => res.json()).then(data => {
+                if (data.error) throw new Error(data.error.message);
+                const models = data.models.map(m => m.name.replace('models/', '')).filter(n => n.includes('gemini'));
+                this.populateModelList(models);
+                this.modelDebug.innerHTML = `<span style="color:#22c55e">✓ Found ${models.length} models for this key.</span>`;
+            }).catch(err => {
+                this.modelDebug.innerHTML = `<span style="color:#ef4444">${err.message}</span>`;
             });
+            return;
+        }
 
-            this.modelDebug.innerHTML = `<span style="color:#22c55e">✓ Successfully found ${models.length} models.</span><br>The dropdown has been updated with your available models. Select one and click Save.`;
+        // If we are here, we use the stored state (User Key or Proxy)
+        this.modelDebug.innerText = 'Fetching available models...';
+        const models = await this.getAvailableModels();
+
+        if (models.length === 0) {
+            this.modelDebug.innerHTML = '<span style="color:#ef4444">No Gemini models found. Check API key.</span>';
+            return;
+        }
+
+        this.populateModelList(models);
+        this.modelDebug.innerHTML = `<span style="color:#22c55e">✓ Found ${models.length} models.</span>`;
+    }
+
+    populateModelList(models) {
+        this.modelInput.innerHTML = '';
+        models.sort().reverse();
+        models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.innerText = m;
+            this.modelInput.appendChild(opt);
+        });
+        if (models.includes(this.model)) {
+            this.modelInput.value = this.model;
+        } else if (models.length > 0) {
             this.modelInput.value = models[0];
-            console.log('Available Models:', models);
-        } catch (error) {
-            this.modelDebug.innerHTML = `<div style="color:#ef4444; font-size: 0.9rem;">
-                <strong>Error:</strong> ${error.message}<br><br>
-                1. Verify your key at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--primary)">AI Studio</a><br>
-                2. Ensure "Generative Language API" is enabled.<br>
-                3. Your region might not support specific models.
-            </div>`;
-            console.error(error);
         }
     }
 
     async optimizeModelSelection() {
-        // Only run optimization if the user has their OWN key.
-        // If they are using the Proxy (no key), the backend handles it (defaults to Flash).
-        if (!this.apiKey) {
-            console.log('Using Proxy Mode: Skipping client-side model optimization.');
-            return;
-        }
+        console.log('Optimizing model selection...');
 
-        console.log('Optimizing model selection for User Key...');
-        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`;
+        const availableModels = await this.getAvailableModels();
+        if (availableModels.length === 0) return;
 
-        try {
-            const response = await fetch(url);
-            if (!response.ok) return; // Silent fail on auto-opt
-            const data = await response.json();
-            if (!data.models) return;
+        // Priority list: Flash (fastest/cheapest) -> Pro 1.5 -> Pro 1.0
+        // User requested dynamic updates compatible with the key.
+        // If the key supports 1.5 Pro, we might want to prefer it if stability isn't the only concern.
+        // However, typically Flash is preferred for speed in this app. 
+        // Let's stick to the preference list [Flash, Pro 1.5, Pro 1.0] to match previous logic, 
+        // OR [Pro 1.5, Flash] if user wants "best". 
+        // Given "Warrior Bot", Flash is usually better for latency. 
 
-            const availableModels = data.models
-                .map(m => m.name.replace('models/', ''))
-                .filter(name => name.toLowerCase().includes('gemini'));
+        const preferred = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro', 'gemini-pro'];
 
-            // Priority list: Flash (fastest/cheapest) -> Pro 1.5 -> Pro 1.0
-            const preferred = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro', 'gemini-pro'];
+        // Check if current model is valid
+        const isCurrentValid = availableModels.includes(this.model);
 
-            // Check if current model is valid
-            const isCurrentValid = availableModels.includes(this.model);
-
-            // If invalid OR if it's the legacy "gemini-pro" (which is often flaky/deprecated), upgrade it.
-            // basic "gemini-pro" is 1.0 and often has issues with v1beta endpoint structure compared to 1.5
-            if (!isCurrentValid || this.model === 'gemini-pro') {
-                let bestMatch = null;
-                for (const p of preferred) {
-                    if (availableModels.includes(p)) {
-                        bestMatch = p;
-                        break; // Stop at first match
-                    }
-                }
-
-                // If no preferred match, just take the first available
-                if (!bestMatch && availableModels.length > 0) bestMatch = availableModels[0];
-
-                if (bestMatch && bestMatch !== this.model) {
-                    console.log(`Upgrading model from ${this.model} to ${bestMatch}`);
-                    this.model = bestMatch;
-                    localStorage.setItem('gemini_model', bestMatch);
-                    if (this.modelInput) this.modelInput.value = bestMatch;
-                    this.showToast(`Updated AI Model to ${bestMatch} for better performance. ⚡️`);
+        // If invalid OR if it's the legacy "gemini-pro", negotiate best match
+        if (!isCurrentValid || this.model === 'gemini-pro') {
+            let bestMatch = null;
+            for (const p of preferred) {
+                if (availableModels.includes(p)) {
+                    bestMatch = p;
+                    break;
                 }
             }
-        } catch (e) {
-            console.warn('Auto-modelling failed', e);
+
+            if (!bestMatch && availableModels.length > 0) bestMatch = availableModels[0];
+
+            if (bestMatch && bestMatch !== this.model) {
+                console.log(`Upgrading model from ${this.model} to ${bestMatch}`);
+                this.model = bestMatch;
+                localStorage.setItem('gemini_model', bestMatch);
+                if (this.modelInput) this.modelInput.value = bestMatch;
+                // Only toast if it's a significant change to avoid spam
+                if (!isCurrentValid) {
+                    this.showToast(`Updated AI Model to ${bestMatch} ⚡️`);
+                }
+            }
         }
     }
 
