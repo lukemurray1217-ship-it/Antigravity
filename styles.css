@@ -62,19 +62,33 @@ body {
     background-color: var(--bg);
     color: var(--text);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    line-height: 1.7;
-    /* Increased line height for editorial feel */
+    line-height: 1.6;
+    /* Clean, readable body text */
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
 }
 
 h1,
+h2,
+h3,
+h4,
+.logo,
+button,
+input,
+select,
+textarea,
+.nav-links a,
+label {
+    font-family: 'Instrument Sans', 'Outfit', sans-serif;
+}
+
+h1,
+h2,
 h3,
 h4,
 .logo {
-    font-family: 'Instrument Sans', 'Outfit', sans-serif;
     font-weight: 700;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.02em;
     /* Tighter, more modern */
     line-height: 1.1;
     color: var(--text);
@@ -473,16 +487,19 @@ header.scrolled .logo {
 }
 
 .group-code-display {
-    font-family: monospace;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    /* Tech feel */
     background: var(--surface-light);
     padding: 0.5rem 1rem;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border-bright);
     font-size: 1.2rem;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.05em;
     display: flex;
     align-items: center;
     gap: 1rem;
+    font-weight: 700;
+    color: var(--primary);
 }
 
 .leader-toolbar {
