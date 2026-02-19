@@ -62,6 +62,9 @@ class WellnessApp {
         this.initFullscreenPersistence();
         this.initRevealOnScroll();
         this.checkForInviteLink();
+
+        // Auto-optimize model on load
+        this.optimizeModelSelection();
     }
 
     checkForInviteLink() {
@@ -1161,13 +1164,14 @@ class WellnessApp {
     }
 
     async fetchModels() {
-        if (!this.apiKeyInput.value.trim()) {
+        const keyToUse = this.apiKeyInput.value.trim() || this.siteApiKey;
+        if (!keyToUse) {
             this.showToast('Please enter an API key first.');
             return;
         }
 
         this.modelDebug.innerText = 'Fetching models...';
-        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKeyInput.value.trim()}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${keyToUse}`;
 
         try {
             const response = await fetch(url);
@@ -1206,6 +1210,57 @@ class WellnessApp {
                 3. Your region might not support specific models.
             </div>`;
             console.error(error);
+        }
+    }
+
+    async optimizeModelSelection() {
+        // Auto-select the best model if the current one is invalid or outdated
+        const effectiveKey = this.apiKey || this.siteApiKey;
+        if (!effectiveKey) return;
+
+        console.log('Optimizing model selection...');
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${effectiveKey}`;
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) return; // Silent fail on auto-opt
+            const data = await response.json();
+            if (!data.models) return;
+
+            const availableModels = data.models
+                .map(m => m.name.replace('models/', ''))
+                .filter(name => name.toLowerCase().includes('gemini'));
+
+            // Priority list: Flash (fastest/cheapest) -> Pro 1.5 -> Pro 1.0
+            const preferred = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro', 'gemini-pro'];
+
+            // Check if current model is valid
+            const isCurrentValid = availableModels.includes(this.model);
+
+            // If invalid OR if it's the legacy "gemini-pro" (which is often flaky/deprecated), upgrade it.
+            // basic "gemini-pro" is 1.0 and often has issues with v1beta endpoint structure compared to 1.5
+            if (!isCurrentValid || this.model === 'gemini-pro') {
+                let bestMatch = null;
+                for (const p of preferred) {
+                    if (availableModels.includes(p)) {
+                        bestMatch = p;
+                        break; // Stop at first match
+                    }
+                }
+
+                // If no preferred match, just take the first available
+                if (!bestMatch && availableModels.length > 0) bestMatch = availableModels[0];
+
+                if (bestMatch && bestMatch !== this.model) {
+                    console.log(`Upgrading model from ${this.model} to ${bestMatch}`);
+                    this.model = bestMatch;
+                    localStorage.setItem('gemini_model', bestMatch);
+                    if (this.modelInput) this.modelInput.value = bestMatch;
+                    this.showToast(`Updated AI Model to ${bestMatch} for better performance. ⚡️`);
+                }
+            }
+        } catch (e) {
+            console.warn('Auto-modelling failed', e);
         }
     }
 
