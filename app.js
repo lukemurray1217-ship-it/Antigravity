@@ -1187,7 +1187,18 @@ class WellnessApp {
             return data.candidates[0].content.parts[0].text;
 
         } catch (error) {
-            console.error('Fetch Error:', error);
+            console.error('Gemini API Error:', error);
+
+            // SELF-HEALING: Check for "leaked key" error
+            if (error.message && (error.message.includes('leaked') || error.message.includes('expired') || error.message.includes('not valid'))) {
+                console.warn('Leaked/Invalid Key detected. Clearing local storage.');
+                localStorage.removeItem('gemini_api_key');
+                this.apiKey = '';
+                this.apiKeyInput.value = '';
+                this.showToast('⚠️ Detected invalid API key. It has been removed. Please try again (will use Site Proxy).', 6000);
+                return "Error: Your API key was invalid and has been reset. Please try your request again.";
+            }
+
             throw error;
         }
     }
