@@ -1,38 +1,28 @@
-const DEFAULT_PROMPT = `You are "Warrior Bot", an elite wellness and ergonomics expert for the "Work Warrior" website. 
-Your goal is to recommend 2-3 specific exercises from the website's library based on how the user feels.
+const DEFAULT_PROMPT = `You are "Warrior Bot", an elite wellness and ergonomics expert.
+Your goal is to recommend 2-3 specific exercises from the library based on how the user feels.
 
-STRICT RULE: ONLY recommend exercises from the provided list below. Do NOT suggest exercises outside this list.
-
-CRITICAL INSTRUCTION - MEDICAL/PAIN QUERIES:
-Users often say "my back hurts" or "I have neck pain". You MUST NOT refuse to answer. 
-- You are not a doctor, but you ARE a wellness coach.
-- Instead of refusing, say: "While I'm not a doctor, for that kind of tension, I recommend..." or "Let's try to gently relieve that area with..."
-- ALWAYS provide a gentle movement solution.
-
-CRITICAL INSTRUCTION - CONTEXT:
-If the user's input includes a "Context: ..." section about their Group Focus, you MUST mention that exercise in your response as a gentle reminder ("Don't forget your group's focus today is...").
-
-CRITICAL INSTRUCTION - MAKING CONNECTIONS:
-You must ALWAYS find a connection to one of the exercises, no matter what the user says.
-- If the input is physical (e.g., "my neck hurts"), recommend the direct physical solution.
-- If the input is emotional (e.g., "I'm sad", "I'm angry"), connect it to a physical release.
-- If the input is abstract or nonsense, find a creative metaphorical bridge.
-
-CUSTOMIZATION RULE:
-For EACH recommended exercise, you MUST provide a "Warrior Tweak"—a specialized slight adjustment or focus point.
+STRICT JSON OUTPUT FORMAT:
+You must output ONLY valid JSON. Do not include markdown formatting like \`\`\`json.
+Structure:
+{
+  "coach_message": "A short, empathetic, professional 1-2 sentence intro.",
+  "protocol_name": "Name of this custom routine (e.g. 'Neck Decompression Protocol')",
+  "exercises": [
+    { 
+      "id": "exercise-id-from-list", 
+      "focus_tip": "A super brief, actionable cue for this specific context (e.g. 'Drop shoulders')."
+    }
+  ]
+}
 
 Available Exercises:
-\${JSON.stringify(EXERCISES)}
+\${JSON.stringify(EXERCISES.map(e => ({id: e.id, title: e.title, benefit: e.benefit})))}
 
-Response Format:
-1. A brief, encouraging message (referencing the Group Focus if applicable).
-2. The recommendations, with the "Warrior Tweak" clearly listed for each.
-3. CRITICAL: Include the exact string "RECOMMENDED_IDS: ["id1", "id2"]" at the end of your response.
-
-Example Opening:
-"Warrior Bot here. I hear you on the neck tension. Since your group is focusing on the 'Seated Neck Release' today, let's start there..."
-
-RECOMMENDED_IDS: ["seated-neck-release", "standing-stretch"]`;
+CRITICAL:
+- If user mentions distinct "Context" (Group Focus), mention it in "coach_message".
+- Always find a connection.
+- NEVER recommend IDs not in the list.
+`;
 
 class WellnessApp {
     constructor() {
@@ -94,20 +84,15 @@ class WellnessApp {
                 sessionStorage.setItem('pending_join_code', joinCode);
                 this.systemPrompt = `You are "Warrior Bot", an elite, empathetic wellness coach. 
         Your Style: Professional, clinical but warm, concise, and action-oriented.
-        Your Output Format:
-        - Use clean Markdown.
-        - Use bullet points for steps.
-        - **BOLD** key terms.
-        - Be ABRIDGED. Do not write long paragraphs. Get to the point.
+        Your Output Format: Strictly JSON.
+        {
+            "coach_message": "Brief intro.",
+            "protocol_name": "Routine Name",
+            "exercises": [ { "id": "ex-id", "focus_tip": "Tip" } ]
+        }
         
-        Your Mission:
-        1. Accept the user's "feeling" (e.g., "my neck hurts", "I'm stressed").
-        2. Recommend 2-3 specific exercises from the list below.
-        3. Explain WHY in 1 short sentence.
-        4. ALWAYS end with a JSON-like array of IDs: RECOMMENDED_IDS: [id1, id2]
-        
-        Available Exercises (ID - Title - Benefit):
-        ${EXERCISES.map(e => `- ${e.id}: ${e.title} (${e.benefit})`).join('\n')}
+        Available Exercises:
+        ${EXERCISES.map(e => `- ${e.id}: ${e.title}`).join('\n')}
         `;
                 // We'll let them login normally, then check pending code
                 // Or we can pre-open auth modal
@@ -1387,101 +1372,56 @@ class WellnessApp {
     renderResult(text) {
         this.resultSection.classList.remove('hidden');
 
-        // Parse IDs from response with more robust regex (multiline, flexible spacing)
-        // Matches: RECOMMENDED_IDS: [ ... ]
-        const idMatch = text.match(/RECOMMENDED_IDS:\s*\[(.*?)\]/s);
+        let protocol = null;
+        let displayMsg = '';
         let recommendedIds = [];
-        let displayMsg = text;
 
-        if (idMatch) {
-            // content inside dashes
-            const rawContent = idMatch[1];
-            recommendedIds = rawContent.split(',').map(id => {
-                // Clean up: remove quotes (single, double, smart), whitespace, newlines
-                return id.trim().replace(/['"“”‘’]/g, '').replace(/\s/g, '');
-            });
-            // Remove the ID block from the display message
-            displayMsg = text.split(/RECOMMENDED_IDS:/)[0].trim();
-        } else {
-            // Fallback: simple text search for IDs if strict block missing
-            console.warn("Could not find RECOMMENDED_IDS block. Attempting fallback.");
-            EXERCISES.forEach(ex => {
-                if (text.includes(ex.id) || text.includes(`"${ex.id}"`)) {
-                    recommendedIds.push(ex.id);
-                }
-            });
+        try {
+            // Attempt to parse JSON. Clean up markdown code blocks if present.
+            const jsonText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            protocol = JSON.parse(jsonText);
+
+            displayMsg = protocol.coach_message;
+            recommendedIds = protocol.exercises.map(e => e.id);
+        } catch (e) {
+            console.warn("JSON Parse Failed, falling back to legacy regex or text search", e);
+            // Fallback logic could go here, or just show raw text
+            displayMsg = text;
+            // Attempt regex extraction as backup
+            const idMatch = text.match(/RECOMMENDED_IDS:\s*\[(.*?)\]/s);
+            if (idMatch) {
+                recommendedIds = idMatch[1].split(',').map(id => id.trim().replace(/['"“”‘’]/g, ''));
+            }
         }
 
+        // Render Protocol Card
         this.geminiResponse.innerHTML = `
-            <div class="ai-result-card">
-                <h3>Warrior Bot Plan</h3>
-                ${marked.parse(displayMsg)} 
+            <div class="protocol-card">
+                <div class="protocol-header">
+                    <span class="protocol-badge">Warrior Protocol</span>
+                    <h3>${protocol ? protocol.protocol_name : 'Custom Routine'}</h3>
+                </div>
+                <div class="protocol-message">
+                    ${marked.parse(displayMsg)}
+                </div>
             </div>
         `;
 
         // Render cards
         this.exerciseList.innerHTML = '';
+        this.exerciseList.className = 'exercise-sections-list'; // Ensure class
 
-        // Filter exercises. Robust fuzzy match if exact match fails.
         let selectedExercises = EXERCISES.filter(ex => recommendedIds.includes(ex.id));
-
-        // If exact match failed, try finding exercises where the ID is mentioned in the bot's raw text 
-        // (sometimes bot mentions "Try the Seated Twist" without putting it in the array correctly)
-        if (selectedExercises.length === 0) {
-            selectedExercises = EXERCISES.filter(ex => {
-                // Check if title or ID appears in text (case insensitive)
-                const lowerText = text.toLowerCase();
-                return lowerText.includes(ex.title.toLowerCase()) || lowerText.includes(ex.id);
-            });
-        }
-
-        if (selectedExercises.length === 0) {
-            // UNIVERSAL FALLBACK: If AI fails or user input is too obscure,
-            // we MUST provide something. We default to the "Anti-Sit Stretch" and "Box Breathing"
-            // as they are universally beneficial.
-            console.warn("AI parsing failed. Engaging Universal Fallback.");
-
-            selectedExercises = EXERCISES.filter(ex => ['standing-stretch', 'box-breathing'].includes(ex.id));
-
-            if (!displayMsg || displayMsg.length < 10) {
-                displayMsg = "I couldn't find a direct match in my database, but these two exercises are my universal prescription for resetting the body and mind.";
-            } else {
-                displayMsg += "<br><br><em>(I've added my top universal recommendations for you below.)</em>";
-            }
-
-            this.geminiResponse.innerHTML = `<p>${displayMsg}</p>`;
-        }
-
-        if (selectedExercises.length > 0) {
-            // Save to history if logged in
-            this.saveToHistory(displayMsg, selectedExercises);
-
-            // --- CLEAN INTERFACE: QUICK ACTION ---
-            // Create a prominent "Start Now" card for the FIRST recommendation
-            const topPick = selectedExercises[0];
-            const quickActionHtml = `
-                <div class="action-highlight-card">
-                    <div style="font-size: 2.5rem;">${topPick.icon}</div>
-                    <div class="action-content">
-                        <h4>Warrior Bot Suggested</h4>
-                        <h3>${topPick.title}</h3>
-                        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0;">Perfect for how you're feeling right now.</p>
-                    </div>
-                    <a href="exercises.html#${topPick.id}" class="action-btn">
-                        Start Now <span>→</span>
-                    </a>
-                </div>
-            `;
-            // Prepend this to the exercise list container, or place it before the grid
-            // Here we will insert it as the first child of exerciseList for visibility
-            this.exerciseList.insertAdjacentHTML('afterbegin', quickActionHtml);
-        }
+        // Prepend this to the exercise list container, or place it before the grid
+        // Here we will insert it as the first child of exerciseList for visibility
+        this.exerciseList.insertAdjacentHTML('afterbegin', quickActionHtml);
+    }
 
         selectedExercises.forEach((ex, index) => {
-            const card = document.createElement('div');
-            card.className = 'exercise-card';
+    const card = document.createElement('div');
+    card.className = 'exercise-card';
 
-            card.innerHTML = `
+    card.innerHTML = `
                 <div class="card-icon">${ex.icon}</div>
                 <h3>${ex.title}</h3>
                 <span class="category-tag">Exercise</span>
@@ -1491,58 +1431,58 @@ class WellnessApp {
                 </div>
                 <a href="exercises.html#${ex.id}" class="secondary-btn" style="margin-top: 1rem; text-decoration: none; text-align: center;">View Details</a>
             `;
-            this.exerciseList.appendChild(card);
-        });
+    this.exerciseList.appendChild(card);
+});
 
-        // Scroll to results
-        this.resultSection.scrollIntoView({ behavior: 'smooth' });
+// Scroll to results
+this.resultSection.scrollIntoView({ behavior: 'smooth' });
     }
 
-    saveToHistory(message, exercises) {
-        if (!this.currentUser) return;
+saveToHistory(message, exercises) {
+    if (!this.currentUser) return;
 
-        const historyItem = {
-            timestamp: new Date().getTime(),
-            message: message,
-            exercises: exercises.map(ex => ({ id: ex.id, title: ex.title, icon: ex.icon })) // Store ID for linking
-        };
+    const historyItem = {
+        timestamp: new Date().getTime(),
+        message: message,
+        exercises: exercises.map(ex => ({ id: ex.id, title: ex.title, icon: ex.icon })) // Store ID for linking
+    };
 
-        this.history.push(historyItem);
-        localStorage.setItem('warrior_history_' + this.currentUser.email, JSON.stringify(this.history));
-    }
+    this.history.push(historyItem);
+    localStorage.setItem('warrior_history_' + this.currentUser.email, JSON.stringify(this.history));
+}
 
-    // --- Weekly & Group Logic ---
+// --- Weekly & Group Logic ---
 
-    getWeeklyRecommendation() {
-        // Simple logic to rotate a weekly featured exercise
-        const weekNum = Math.floor(new Date().getTime() / (1000 * 60 * 60 * 24 * 7));
-        const index = weekNum % EXERCISES.length;
-        return EXERCISES[index];
-    }
+getWeeklyRecommendation() {
+    // Simple logic to rotate a weekly featured exercise
+    const weekNum = Math.floor(new Date().getTime() / (1000 * 60 * 60 * 24 * 7));
+    const index = weekNum % EXERCISES.length;
+    return EXERCISES[index];
+}
 
-    getGroupWeeklyPlan(groupCode) {
-        // Deterministic 5-day plan based on group code
-        let seed = 0;
-        for (let i = 0; i < groupCode.length; i++) seed += groupCode.charCodeAt(i);
+getGroupWeeklyPlan(groupCode) {
+    // Deterministic 5-day plan based on group code
+    let seed = 0;
+    for (let i = 0; i < groupCode.length; i++) seed += groupCode.charCodeAt(i);
 
-        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-        return days.map((day, i) => {
-            const exIndex = (seed + i) % EXERCISES.length;
-            return { day, exercise: EXERCISES[exIndex] };
-        });
-    }
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    return days.map((day, i) => {
+        const exIndex = (seed + i) % EXERCISES.length;
+        return { day, exercise: EXERCISES[exIndex] };
+    });
+}
 
-    renderGroupPlan(groupCode) {
-        if (!this.groupPlanArea) return;
+renderGroupPlan(groupCode) {
+    if (!this.groupPlanArea) return;
 
-        const plan = this.getGroupWeeklyPlan(groupCode);
-        const todayIndex = new Date().getDay() - 1; // 0-indexed Mon-Fri (assuming 1-5)
+    const plan = this.getGroupWeeklyPlan(groupCode);
+    const todayIndex = new Date().getDay() - 1; // 0-indexed Mon-Fri (assuming 1-5)
 
-        // --- CLEAN INTERFACE: TODAY'S FOCUS ---
-        let todaysFocusHtml = '';
-        if (todayIndex >= 0 && todayIndex < 5) {
-            const todaysItem = plan[todayIndex];
-            todaysFocusHtml = `
+    // --- CLEAN INTERFACE: TODAY'S FOCUS ---
+    let todaysFocusHtml = '';
+    if (todayIndex >= 0 && todayIndex < 5) {
+        const todaysItem = plan[todayIndex];
+        todaysFocusHtml = `
                 <div class="todays-focus-container">
                     <div class="todays-focus-header">
                         <span>📅 Today's Group Focus</span>
@@ -1557,9 +1497,9 @@ class WellnessApp {
                     </div>
                 </div>
             `;
-        } else {
-            // Weekend fallback
-            todaysFocusHtml = `
+    } else {
+        // Weekend fallback
+        todaysFocusHtml = `
                 <div class="todays-focus-container">
                     <div class="todays-focus-header">
                         <span>Weekend Vibes</span>
@@ -1567,9 +1507,9 @@ class WellnessApp {
                     <p style="color: var(--text-muted);">Rest and recover. See you Monday!</p>
                 </div>
              `;
-        }
+    }
 
-        this.groupPlanArea.innerHTML = `
+    this.groupPlanArea.innerHTML = `
             ${todaysFocusHtml}
             <h3 style="margin-bottom: 1.5rem; text-align: center;">This Week's Schedule</h3>
             <div class="weekly-plan-grid">
@@ -1583,27 +1523,27 @@ class WellnessApp {
                 `).join('')}
             </div>
         `;
-        this.initRevealOnScroll(); // Re-init to catch new elements
-    }
+    this.initRevealOnScroll(); // Re-init to catch new elements
+}
 
-    initRevealOnScroll() {
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
+initRevealOnScroll() {
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
-            });
-        }, observerOptions);
-
-        document.querySelectorAll('.reveal').forEach(el => {
-            observer.observe(el);
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+            }
         });
-    }
+    }, observerOptions);
+
+    document.querySelectorAll('.reveal').forEach(el => {
+        observer.observe(el);
+    });
+}
 }
 
 // Initialize app

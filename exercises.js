@@ -12,6 +12,7 @@ const EXERCISES = [
             {
                 subtitle: "Right Side",
                 duration: "30s",
+                reps: "1 hold",
                 instruction: "Sit tall. Place your right hand on your left ear and gently guide your head towards your right shoulder.",
                 image: "assets/illustrations/steps/neck-release-1.png"
             },
@@ -131,7 +132,8 @@ const EXERCISES = [
         workout: [
             {
                 subtitle: "Cow Pose",
-                duration: "5s",
+                duration: "3s",
+                reps: "10 reps",
                 instruction: "Inhale, arch your back, lift your chest, look up.",
                 image: "assets/illustrations/steps/cat-cow-1.png"
             },
@@ -433,6 +435,7 @@ const EXERCISES = [
             {
                 subtitle: "Repeat",
                 duration: "60s",
+                reps: "10 reps",
                 instruction: "Repeat for 10 reps.",
                 image: "assets/illustrations/steps/chin-tuck-3.png"
             }
@@ -703,6 +706,7 @@ const EXERCISES = [
             {
                 subtitle: "Activation",
                 duration: "60s",
+                reps: "10 squeezes",
                 instruction: "Stand feet hip-width. Squeeze glutes hard for 5s, release. Repeat 10x.",
                 image: "assets/illustrations/steps/glute-1.png"
             }
