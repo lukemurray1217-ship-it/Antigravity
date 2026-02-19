@@ -189,6 +189,8 @@ class WellnessApp {
         this.newGroupCodeText = document.getElementById('new-group-code');
         this.copyCodeBtn = document.getElementById('copy-code-btn');
         this.copyInviteLinkBtn = document.getElementById('copy-invite-link-btn');
+        this.shareSmsBtn = document.getElementById('share-sms-btn');
+        this.shareEmailBtn = document.getElementById('share-email-btn');
         this.emptyMembersState = document.getElementById('empty-members-state');
 
 
@@ -254,6 +256,8 @@ class WellnessApp {
 
         if (this.copyCodeBtn) this.copyCodeBtn.addEventListener('click', () => this.handleCopyCode());
         if (this.copyInviteLinkBtn) this.copyInviteLinkBtn.addEventListener('click', () => this.handleCopyInviteLink());
+        if (this.shareSmsBtn) this.shareSmsBtn.addEventListener('click', () => this.handleShareSMS());
+        if (this.shareEmailBtn) this.shareEmailBtn.addEventListener('click', () => this.handleShareEmail());
 
 
 
@@ -672,6 +676,54 @@ class WellnessApp {
             console.error('Failed to copy link: ', err);
             this.showToast('Failed to copy link. Code is: ' + code);
         });
+    }
+
+    getInviteData() {
+        const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
+        const userData = users[this.currentUser.email] || {};
+        const code = userData.groupCode || (this.newGroupCodeText ? this.newGroupCodeText.innerText : '');
+
+        if (!code || code === '...') return null;
+
+        const inviteLink = `${window.location.origin}/groups.html?join=${code}`;
+        const message = `Join my Warrior Group on Wellness Workspace! \n\nGroup Code: ${code} \nLink: ${inviteLink}`;
+
+        return { code, inviteLink, message };
+    }
+
+    handleShareSMS() {
+        const data = this.getInviteData();
+        if (!data) {
+            this.showToast('No active group code to share.');
+            return;
+        }
+
+        // On mobile, navigator.share is best if available
+        if (navigator.share) {
+            navigator.share({
+                title: 'Join my Warrior Group',
+                text: data.message,
+                url: data.inviteLink
+            }).catch(console.error);
+        } else {
+            // Fallback to SMS link
+            // Note: iOS uses '&', Android uses '?' separator often, but '?' is safer standard start
+            const ua = navigator.userAgent.toLowerCase();
+            const changes = (ua.indexOf('iphone') > -1 || ua.indexOf('ipad') > -1) ? '&' : '?';
+            window.location.href = `sms:${changes}body=${encodeURIComponent(data.message)}`;
+        }
+    }
+
+    handleShareEmail() {
+        const data = this.getInviteData();
+        if (!data) {
+            this.showToast('No active group code to share.');
+            return;
+        }
+
+        const subject = encodeURIComponent("Join my Warrior Group 💪");
+        const body = encodeURIComponent(data.message);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }
 
     initFullscreenPersistence() {

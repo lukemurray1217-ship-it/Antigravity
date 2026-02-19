@@ -153,11 +153,16 @@
                                 <h3 style="margin: 0 0 1rem 0;">🛠 Leader Dashboard</h3>
                                 <div class="leader-controls" style="display: flex; gap: 1rem; flex-wrap: wrap;">
 
-                                    <div class="quick-actions-bar" style="display: flex; gap: 0.5rem; width: 100%;">
-                                        <button id="generate-code-btn" class="secondary-btn" style="flex: 1;">↻ New
-                                            Code</button>
-                                        <button id="copy-invite-link-btn" class="secondary-btn" style="flex: 1;">🔗 Copy
-                                            Invite Link</button>
+                                    <div class="quick-actions-bar"
+                                        style="display: flex; gap: 0.5rem; width: 100%; flex-wrap: wrap;">
+                                        <button id="generate-code-btn" class="secondary-btn"
+                                            style="flex: 1; min-width: 120px;">↻ New Code</button>
+                                        <button id="copy-invite-link-btn" class="secondary-btn"
+                                            style="flex: 1; min-width: 120px;">🔗 Copy Link</button>
+                                        <button id="share-sms-btn" class="secondary-btn" style="flex: 0 0 auto;"
+                                            title="Share via Text">💬</button>
+                                        <button id="share-email-btn" class="secondary-btn" style="flex: 0 0 auto;"
+                                            title="Share via Email">✉️</button>
                                     </div>
 
                                     <div id="generated-code-display" class="hidden"
