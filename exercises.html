@@ -76,10 +76,16 @@
         <main>
             <section class="hero-section hero-exercises reveal">
                 <div class="content-container">
-                    <h2>All Exercises</h2>
-                    <p>A comprehensive collection of movements to keep you feeling your best. Filtered by category for
-                        easy
-                        access.</p>
+                    <h2 id="exercises-title">All Exercises</h2>
+                    <p id="exercises-subtitle">A comprehensive collection of movements to keep you feeling your best.
+                        Filtered by category for easy access.</p>
+                    <div id="protocol-nav-btns" class="hidden"
+                        style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center;">
+                        <a href="index.html" class="secondary-btn"
+                            style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2);">← Back to
+                            Warrior Bot</a>
+                        <button id="clear-filter-btn" class="primary-btn">Show All Exercises</button>
+                    </div>
                 </div>
             </section>
 
@@ -210,6 +216,34 @@
                 `;
                 list.appendChild(section);
             });
+            // URL param filtering – show only recommended exercises (default stretch ensured in app.js)
+            const urlParams = new URLSearchParams(window.location.search);
+            const idsParam = urlParams.get('ids');
+            if (idsParam) {
+                const ids = idsParam.split(',');
+                document.querySelectorAll('.exercise-section').forEach(sec => {
+                    if (!ids.includes(sec.id)) {
+                        sec.style.display = 'none';
+                    }
+                });
+
+                // UX Polish for filtered view
+                const title = document.getElementById('exercises-title');
+                const subtitle = document.getElementById('exercises-subtitle');
+                const navBtns = document.getElementById('protocol-nav-btns');
+
+                if (title) title.textContent = "Your Warrior Protocol";
+                if (subtitle) subtitle.textContent = "This personalized sequence has been tailored to your specific needs by Warrior Bot. Follow the steps below in order.";
+                if (navBtns) navBtns.classList.remove('hidden');
+
+                // Handle clear filter
+                const clearBtn = document.getElementById('clear-filter-btn');
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', () => {
+                        window.location.href = 'exercises.html';
+                    });
+                }
+            }
 
             // Handle deep linking and highlighting
             const hash = window.location.hash;

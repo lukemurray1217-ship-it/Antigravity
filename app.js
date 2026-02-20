@@ -1411,6 +1411,15 @@ class WellnessApp {
                 <div class="protocol-message">
                     ${marked.parse(displayMsg)}
                 </div>
+                ${(() => {
+                const ids = recommendedIds.slice();
+                const defaultStretch = 'seated-neck-release';
+                if (!ids.includes(defaultStretch)) ids.push(defaultStretch);
+                const url = 'exercises.html?ids=' + encodeURIComponent(ids.join(','));
+                return `
+                    <a href="${url}" class="secondary-btn" style="margin-top: 1rem; display: inline-block;">View All Exercises</a>
+                    <a href="${url}" class="primary-btn" style="margin-top: 1rem; margin-left: 0.5rem; display: inline-block;">Start Protocol</a>`;
+            })()}
             </div>
         `;
 
