@@ -1433,9 +1433,6 @@ class WellnessApp {
         this.exerciseList.className = 'exercise-sections-list'; // Ensure class
 
         let selectedExercises = EXERCISES.filter(ex => recommendedIds.includes(ex.id));
-        // Prepend this to the exercise list container, or place it before the grid
-        // Here we will insert it as the first child of exerciseList for visibility
-        this.exerciseList.insertAdjacentHTML('afterbegin', quickActionHtml);
 
 
         selectedExercises.forEach((ex, index) => {
