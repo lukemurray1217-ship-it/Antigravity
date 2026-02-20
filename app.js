@@ -1,16 +1,21 @@
-const DEFAULT_PROMPT = `You are "Warrior Bot", an elite wellness and ergonomics expert.
-Your goal is to recommend 2-3 specific exercises from the library based on how the user feels.
+const DEFAULT_PROMPT = `You are "Warrior Bot", an elite clinical wellness and ergonomics expert specializing in workplace mobility.
+Your primary objective is to recommend 2-3 specific exercises from the provided library that DIRECTLY address the user's specific physical problem or goal.
+
+STRICT RELEVANCE RULES:
+1.  **Direct Connection**: Every recommended exercise must have a clear, mechanical link to the user's symptoms (e.g., if wrists hurt, recommend forearm stretches).
+2.  **Explicit Justification**: In the "coach_message", you MUST explicitly explain WHY these exercises help their specific issue (e.g., "Since your lower back is tight from sitting, we'll focus on hip openers to release the anterior chain...").
+3.  **Comprehensive Context**: If the user mentions a group or a specific work context (e.g., "coding for 8 hours"), tailor the tone and advice to that professional environment.
 
 STRICT JSON OUTPUT FORMAT:
-You must output ONLY valid JSON. Do not include markdown formatting like \`\`\`json.
+You must output ONLY valid JSON. No markdown formatting.
 Structure:
 {
-  "coach_message": "A short, empathetic, professional 1-2 sentence intro.",
-  "protocol_name": "Name of this custom routine (e.g. 'Neck Decompression Protocol')",
+  "coach_message": "A professional yet warm 2-3 sentence justification linking the user's problem to the recommended protocol.",
+  "protocol_name": "A descriptive name (e.g., 'Carpal Tunnel Shield Protocol')",
   "exercises": [
     { 
-      "id": "exercise-id-from-list", 
-      "focus_tip": "A super brief, actionable cue for this specific context (e.g. 'Drop shoulders')."
+      "id": "id-from-list", 
+      "focus_tip": "One vital cue (e.g., 'Rotate thumbs out')." 
     }
   ]
 }
@@ -19,9 +24,8 @@ Available Exercises:
 \${JSON.stringify(EXERCISES.map(e => ({id: e.id, title: e.title, benefit: e.benefit})))}
 
 CRITICAL:
-- If user mentions distinct "Context" (Group Focus), mention it in "coach_message".
-- Always find a connection.
-- NEVER recommend IDs not in the list.
+- NEVER hallucinate exercise IDs.
+- Ensure the connection feels clinical and expert, not generic.
 `;
 
 class WellnessApp {
@@ -187,6 +191,10 @@ class WellnessApp {
         this.leaderToolbar = document.getElementById('leader-toolbar');
         this.generateCodeBtnLine = document.getElementById('generate-code-btn');
         this.generatedCodeDisplay = document.getElementById('generated-code-display');
+
+        // Weekly Strategy (Home Screen)
+        this.weeklyStrategySection = document.getElementById('weekly-strategy-section');
+        this.weeklyStrategyCard = document.getElementById('weekly-strategy-card');
         this.newGroupCodeText = document.getElementById('new-group-code');
         this.newGroupCodeText = document.getElementById('new-group-code');
         this.copyCodeBtn = document.getElementById('copy-code-btn');
@@ -568,6 +576,7 @@ class WellnessApp {
             } else {
                 if (this.leaderToolbar) this.leaderToolbar.classList.add('hidden');
             }
+            this.renderHomeStrategy();
         } else {
             this.loggedOutGroups.classList.remove('hidden');
             this.loggedInGroups.classList.add('hidden');
@@ -1405,10 +1414,14 @@ class WellnessApp {
                     <span>←</span> Back to Home
                 </button>
                 <div class="protocol-header">
-                    <span class="protocol-badge">Warrior Protocol</span>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                        <span class="protocol-badge">Warrior Protocol</span>
+                        <span class="protocol-badge" style="background: rgba(168, 195, 181, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); font-size: 0.7rem;">✓ AI Verified</span>
+                    </div>
                     <h3>${protocol ? protocol.protocol_name : 'Custom Routine'}</h3>
                 </div>
                 <div class="protocol-message">
+                    <p style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Clinical Justification</p>
                     ${marked.parse(displayMsg)}
                 </div>
                 ${(() => {
@@ -1504,6 +1517,45 @@ class WellnessApp {
             const exIndex = (seed + i) % EXERCISES.length;
             return { day, exercise: EXERCISES[exIndex] };
         });
+    }
+
+    renderHomeStrategy() {
+        if (!this.weeklyStrategySection || !this.weeklyStrategyCard || !this.currentUser) {
+            if (this.weeklyStrategySection) this.weeklyStrategySection.classList.add('hidden');
+            return;
+        }
+
+        const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
+        const userData = users[this.currentUser.email] || {};
+
+        if (!userData.groupCode) {
+            this.weeklyStrategySection.classList.add('hidden');
+            return;
+        }
+
+        const plan = this.getGroupWeeklyPlan(userData.groupCode);
+        const todayNum = new Date().getDay(); // 0 for Sun, 1 for Mon, etc.
+        // Map Sun(0) to Mon(1) and Sat(6) to Fri(5)
+        const targetIdx = Math.max(0, Math.min(4, todayNum - 1));
+        const todayPlan = plan[targetIdx];
+        const ex = todayPlan.exercise;
+
+        this.weeklyStrategySection.classList.remove('hidden');
+        this.weeklyStrategyCard.innerHTML = `
+            <div class="strategy-info">
+                <span class="strategy-badge">Today's Team focus</span>
+                <h3 class="strategy-title">${ex.title}</h3>
+                <p class="hint" style="margin-bottom: 1rem;">${ex.benefit}</p>
+                <div class="strategy-meta">
+                    <span>📅 ${todayPlan.day} Protocol</span>
+                    <span><div class="presence-dot"></div> Team Resilience Sync: Active</span>
+                </div>
+                <a href="exercises.html#${ex.id}" class="primary-btn" style="margin-top: 1.5rem; width: auto; display: inline-flex; justify-content: center;">Start Today's Reset</a>
+            </div>
+            <div class="strategy-visual">
+                ${ex.icon}
+            </div>
+        `;
     }
 
     renderGroupPlan(groupCode) {
