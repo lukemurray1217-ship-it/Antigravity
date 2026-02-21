@@ -38,11 +38,6 @@ class WellnessApp {
         this.history = JSON.parse(localStorage.getItem('warrior_history_' + (this.currentUser?.email || 'anon'))) || [];
         this.isSignup = false;
 
-        // Cookie Logic
-        this.cookiesAccepted = localStorage.getItem('warrior_cookies_accepted') === 'true';
-
-        // Initialize Banner FIRST so elements exist for initElements
-        this.initCookieBanner();
 
         this.initElements();
         this.initEventListeners();
@@ -56,6 +51,7 @@ class WellnessApp {
 
         // Auto-optimize model on load
         this.optimizeModelSelection();
+        this.syncBottomNav();
     }
 
     checkForInviteLink() {
@@ -196,7 +192,6 @@ class WellnessApp {
         this.weeklyStrategySection = document.getElementById('weekly-strategy-section');
         this.weeklyStrategyCard = document.getElementById('weekly-strategy-card');
         this.newGroupCodeText = document.getElementById('new-group-code');
-        this.newGroupCodeText = document.getElementById('new-group-code');
         this.copyCodeBtn = document.getElementById('copy-code-btn');
         this.copyInviteLinkBtn = document.getElementById('copy-invite-link-btn');
         this.shareSmsBtn = document.getElementById('share-sms-btn');
@@ -209,16 +204,20 @@ class WellnessApp {
         this.mobileMenuToggle = document.getElementById('mobile-menu-toggle');
         this.navLinks = document.querySelector('.nav-links');
 
-        // Cookie Elements
-        this.cookieBanner = document.getElementById('cookie-banner');
-        this.acceptCookiesBtn = document.getElementById('accept-cookies');
-        this.declineCookiesBtn = document.getElementById('decline-cookies');
 
         // Newsletter Section
         this.newsletterSection = document.getElementById('newsletter-section');
 
         // Group Plan Elements
         this.groupPlanArea = document.getElementById('group-plan-render-area');
+
+        // Bottom Nav Links
+        this.navHome = document.getElementById('nav-home');
+        this.navMove = document.getElementById('nav-move');
+        this.navAsk = document.getElementById('nav-ask');
+        this.navSocial = document.getElementById('nav-social');
+        this.navProfile = document.getElementById('nav-profile');
+        this.navMore = document.getElementById('nav-more');
     }
 
     initEventListeners() {
@@ -275,6 +274,12 @@ class WellnessApp {
         if (this.mobileMenuToggle) {
             this.mobileMenuToggle.addEventListener('click', () => this.toggleMobileMenu());
         }
+        if (this.navMore) {
+            this.navMore.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleMobileMenu(true);
+            });
+        }
 
         if (this.navLinks) {
             this.navLinks.querySelectorAll('a').forEach(link => {
@@ -282,9 +287,23 @@ class WellnessApp {
             });
         }
 
-        // Cookie Listeners
-        if (this.acceptCookiesBtn) this.acceptCookiesBtn.addEventListener('click', () => this.handleCookieAcceptance(true));
-        if (this.declineCookiesBtn) this.declineCookiesBtn.addEventListener('click', () => this.handleCookieAcceptance(false));
+        // Bottom Nav "Ask" special handling
+        if (this.navAsk) {
+            this.navAsk.addEventListener('click', (e) => {
+                const path = window.location.pathname;
+                if (path.endsWith('index.html') || path.endsWith('/') || path === '') {
+                    // Stay on page, focus input
+                    e.preventDefault();
+                    if (this.feelingInput) {
+                        this.feelingInput.focus();
+                        this.feelingInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // Pulse the input to show it's focused
+                        this.feelingInput.classList.add('highlight-pulse');
+                        setTimeout(() => this.feelingInput.classList.remove('highlight-pulse'), 2000);
+                    }
+                }
+            });
+        }
     }
 
     toggleNewsletterModal(show) {
@@ -680,6 +699,7 @@ class WellnessApp {
     }
 
     getInviteData() {
+        if (!this.currentUser) return null;
         const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
         const userData = users[this.currentUser.email] || {};
         const code = userData.groupCode || (this.newGroupCodeText ? this.newGroupCodeText.innerText : '');
@@ -771,6 +791,26 @@ class WellnessApp {
                 this.mobileMenuToggle.innerText = '☰';
                 document.body.style.overflow = ''; // Unlock scroll
             }
+        }
+    }
+
+    syncBottomNav() {
+        const path = window.location.pathname;
+        const page = path.split('/').pop() || 'index.html';
+
+        document.querySelectorAll('.bottom-nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+
+        // Terminology matches: Move -> Exercises, Social -> Groups
+        if (page === 'index.html' || page === '') {
+            this.navHome?.classList.add('active');
+        } else if (page === 'exercises.html') {
+            this.navMove?.classList.add('active'); // navMove is the button for Exercises
+        } else if (page === 'groups.html') {
+            this.navSocial?.classList.add('active'); // navSocial is the button for Groups
+        } else if (page === 'profile.html' || page === 'profile') {
+            this.navProfile?.classList.add('active');
         }
     }
 
@@ -941,7 +981,7 @@ class WellnessApp {
                     "${m.quote}"
                 </div>
                 <div class="cheer-overlay">
-                    <button class="cheer-btn" onclick="app.handleCheer('${m.name}')">🙌 High Five!</button>
+                    <button class="cheer-btn" onclick="window.app.handleCheer('${m.name}')">🙌 High Five!</button>
                 </div>
             `;
             this.memberList.appendChild(card);
@@ -1037,10 +1077,7 @@ class WellnessApp {
             return;
         }
 
-        if (!this.apiKey && !this.cookiesAccepted) {
-            // Optional: Auto-show banner but allow proceeding
-            this.showCookieBanner();
-        }
+
 
         // PROXY MODE SUPPORT:
         // We now allow proceeding even if this.apiKey is empty, because we have the Vercel Proxy as fallback.
@@ -1093,65 +1130,7 @@ class WellnessApp {
         }
     }
 
-    initCookieBanner() {
-        if (!this.cookieBanner) {
-            this.injectCookieBannerHTML();
-        }
-        if (!this.cookiesAccepted && !localStorage.getItem('warrior_cookies_declined')) {
-            this.showCookieBanner();
-        }
-    }
 
-    injectCookieBannerHTML() {
-        const banner = document.createElement('div');
-        banner.id = 'cookie-banner';
-        banner.className = 'cookie-banner hidden';
-        banner.innerHTML = `
-            <div class="cookie-content">
-                <div class="cookie-text">
-                    <h4>✨ Enable Warrior Bot Features</h4>
-                    <p>Experience personalized wellness recommendations powered by Warrior Bot AI. By accepting, you can use all AI features immediately using our site-wide configuration.</p>
-                </div>
-                <div class="cookie-actions">
-                    <button id="accept-cookies" class="primary-btn">Accept & Enable</button>
-                    <button id="decline-cookies" class="secondary-btn">Maybe later</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(banner);
-        this.cookieBanner = banner;
-        this.acceptCookiesBtn = document.getElementById('accept-cookies');
-        this.declineCookiesBtn = document.getElementById('decline-cookies');
-
-        // Add listeners for injected elements
-        if (this.acceptCookiesBtn) this.acceptCookiesBtn.addEventListener('click', () => this.handleCookieAcceptance(true));
-        if (this.declineCookiesBtn) this.declineCookiesBtn.addEventListener('click', () => this.handleCookieAcceptance(false));
-    }
-
-    showCookieBanner() {
-        if (this.cookieBanner) {
-            this.cookieBanner.classList.remove('hidden');
-        }
-    }
-
-    handleCookieAcceptance(accepted) {
-        if (accepted) {
-            this.cookiesAccepted = true;
-            localStorage.setItem('warrior_cookies_accepted', 'true');
-            localStorage.removeItem('warrior_cookies_declined');
-            this.showToast('Cookies accepted! AI features enabled.');
-
-            // If user has entered text, auto-trigger the recommendation
-            if (this.feelingInput && this.feelingInput.value.trim()) {
-                this.handleGeminiRequest();
-            }
-        } else {
-            localStorage.setItem('warrior_cookies_declined', 'true');
-        }
-        if (this.cookieBanner) {
-            this.cookieBanner.classList.add('hidden');
-        }
-    }
 
 
     setLoading(isLoading) {
@@ -1348,7 +1327,7 @@ class WellnessApp {
         // OR [Pro 1.5, Flash] if user wants "best". 
         // Given "Warrior Bot", Flash is usually better for latency. 
 
-        const preferred = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro', 'gemini-pro'];
+        const preferred = ['gemini-2.0-flash-exp', 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro', 'gemini-pro'];
 
         // Check if current model is valid
         const isCurrentValid = availableModels.includes(this.model);
