@@ -49,6 +49,7 @@ class WellnessApp {
         this.initFullscreenPersistence();
         this.initRevealOnScroll();
         this.checkForInviteLink();
+        this.initLeaderboard();
 
         // Auto-optimize model on load
         this.optimizeModelSelection();
@@ -220,6 +221,10 @@ class WellnessApp {
         this.navSocial = document.getElementById('nav-social');
         this.navProfile = document.getElementById('nav-profile');
         this.navMore = document.getElementById('nav-more');
+
+        // NEW: Enterprise Elements
+        this.leaderboardBody = document.getElementById('leaderboard-body');
+        this.corpIndex = document.getElementById('corporate-overview');
     }
 
     initEventListeners() {
@@ -1623,6 +1628,42 @@ class WellnessApp {
         document.querySelectorAll('.reveal:not(.visible)').forEach(el => {
             this.revealObserver.observe(el);
         });
+    }
+
+    /* --- ENTERPRISE LEADERBOARD LOGIC --- */
+    initLeaderboard() {
+        if (!this.leaderboardBody) return;
+        this.renderLeaderboard();
+    }
+
+    renderLeaderboard() {
+        if (!this.leaderboardBody) return;
+
+        // Mock Organizational Data – in a real app this would come from a backend
+        // We calculate "Vitality Score" based on consistency and participation
+        const departments = [
+            { name: "Investment Banking", score: 98.4, participation: 92, trend: "+1.2%", status: "up" },
+            { name: "Asset Management", score: 95.1, participation: 88, trend: "+0.4%", status: "up" },
+            { name: "Corporate Banking", score: 92.8, participation: 84, trend: "-0.2%", status: "down" },
+            { name: "Technology & Operations", score: 91.5, participation: 81, trend: "+0.8%", status: "up" },
+            { name: "Wealth Management", score: 89.2, participation: 79, trend: "+1.5%", status: "up" }
+        ];
+
+        this.leaderboardBody.innerHTML = departments.map((dept, index) => `
+            <tr style="border-bottom: 1px solid var(--border-bright);">
+                <td style="padding: 1rem;"><span class="rank-badge rank-${index + 1}">${index + 1}</span></td>
+                <td style="padding: 1rem; font-weight: 600;">${dept.name}</td>
+                <td style="padding: 1rem; font-family: monospace; font-weight: 700;">${dept.score}</td>
+                <td style="padding: 1rem;">
+                    <div style="width: 100px; height: 6px; background: var(--surface-light); border-radius: 3px; overflow: hidden;">
+                        <div style="width: ${dept.participation}%; height: 100%; background: var(--primary);"></div>
+                    </div>
+                </td>
+                <td style="padding: 1rem; color: ${dept.status === 'up' ? 'var(--accent-standing)' : 'var(--accent-eye)'};">
+                    ${dept.status === 'up' ? '▲' : '▼'} ${dept.trend.replace('+', '').replace('-', '')}
+                </td>
+            </tr>
+        `).join('');
     }
 }
 

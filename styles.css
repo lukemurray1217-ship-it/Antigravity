@@ -3286,3 +3286,76 @@ textarea:focus {
         position: static !important;
     }
 }
+/* --- ENTERPRISE LEADERBOARD & EXECUTIVE OVERVIEW --- */
+.leaderboard-table th {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.leaderboard-table td {
+    padding: 1.25rem 1rem;
+    font-size: 0.95rem;
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: 800;
+    background: var(--surface-light);
+    color: var(--text-muted);
+}
+
+.rank-1 {
+    background: linear-gradient(135deg, #ffd700, #ff9f00);
+    color: #451a03;
+    box-shadow: 0 0 15px rgba(255, 159, 0, 0.4);
+}
+
+.rank-2 {
+    background: linear-gradient(135deg, #e2e8f0, #94a3b8);
+    color: #1e293b;
+}
+
+.rank-3 {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: white;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Data Table Hover Effects */
+.leaderboard-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.leaderboard-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* Executive Overview Animation */
+#corporate-overview {
+    animation: fadeInSlideUp 0.8s var(--ease-out);
+}
+
+@keyframes fadeInSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -129,6 +129,99 @@
 
             <div class="content-area">
                 <div class="content-container">
+                    <!-- NEW: Corporate Executive Overview -->
+                    <section id="corporate-overview" class="info-card reveal"
+                        style="margin-bottom: 2rem; border-bottom: 4px solid var(--primary); background: linear-gradient(to right, rgba(var(--primary-rgb), 0.05), transparent);">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 2rem;">
+                            <div>
+                                <h4 class="hint"
+                                    style="text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem;">
+                                    Corporate Vitality Index</h4>
+                                <h2 style="margin: 0; font-size: 2.5rem;">94.2 <span
+                                        style="font-size: 1rem; color: var(--accent-standing);">+2.4%</span></h2>
+                            </div>
+                            <div style="display: flex; gap: 3rem;">
+                                <div class="stat-item">
+                                    <span class="hint">Active Warriors</span>
+                                    <h4 style="margin: 0;">12,482</h4>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="hint">Recovery Minutes</span>
+                                    <h4 style="margin: 0;">842k</h4>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="hint">Top Dept</span>
+                                    <h4 style="margin: 0; color: var(--primary);">Investment Bank</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- NEW: Global Org Leaderboard -->
+                    <section id="org-leaderboard" class="info-card reveal" style="margin-bottom: 2rem;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h3 style="margin: 0;">Global Organization Leaderboard</h3>
+                            <span class="hint">Updated real-time across all departments</span>
+                        </div>
+                        <div class="leaderboard-container" style="overflow-x: auto;">
+                            <table class="leaderboard-table" style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="text-align: left; border-bottom: 1px solid var(--border);">
+                                        <th style="padding: 1rem;">Rank</th>
+                                        <th style="padding: 1rem;">Department</th>
+                                        <th style="padding: 1rem;">Vitality Score</th>
+                                        <th style="padding: 1rem;">Weekly Participation</th>
+                                        <th style="padding: 1rem;">Trend</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leaderboard-body">
+                                    <!-- Leaderboard rows will be injected here -->
+                                    <tr style="border-bottom: 1px solid var(--border-bright);">
+                                        <td style="padding: 1rem;"><span class="rank-badge rank-1">1</span></td>
+                                        <td style="padding: 1rem; font-weight: 600;">Investment Banking</td>
+                                        <td style="padding: 1rem;">98.4</td>
+                                        <td style="padding: 1rem;">
+                                            <div
+                                                style="width: 100px; height: 6px; background: var(--surface-light); border-radius: 3px; overflow: hidden;">
+                                                <div style="width: 92%; height: 100%; background: var(--primary);">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 1rem; color: var(--accent-standing);">▲ 1.2%</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid var(--border-bright);">
+                                        <td style="padding: 1rem;"><span class="rank-badge rank-2">2</span></td>
+                                        <td style="padding: 1rem; font-weight: 600;">Asset Management</td>
+                                        <td style="padding: 1rem;">95.1</td>
+                                        <td style="padding: 1rem;">
+                                            <div
+                                                style="width: 100px; height: 6px; background: var(--surface-light); border-radius: 3px; overflow: hidden;">
+                                                <div style="width: 88%; height: 100%; background: var(--primary);">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 1rem; color: var(--accent-standing);">▲ 0.4%</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid var(--border-bright);">
+                                        <td style="padding: 1rem;"><span class="rank-badge rank-3">3</span></td>
+                                        <td style="padding: 1rem; font-weight: 600;">Corporate & Investment Bank</td>
+                                        <td style="padding: 1rem;">92.8</td>
+                                        <td style="padding: 1rem;">
+                                            <div
+                                                style="width: 100px; height: 6px; background: var(--surface-light); border-radius: 3px; overflow: hidden;">
+                                                <div style="width: 84%; height: 100%; background: var(--primary);">
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 1rem; color: var(--accent-eye);">▼ 0.2%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
                     <div id="logged-in-groups" class="hidden">
                         <!-- Join Group View -->
                         <div id="join-group-view" class="info-card hidden" style="text-align: center;">
