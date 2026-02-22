@@ -243,26 +243,38 @@ header.scrolled .logo {
         margin-right: auto;
     }
 
-    .mobile-only {
+    /* Settings Toggle & Other Icon Buttons */
+    .icon-btn {
+        background: var(--glass);
+        border: 1px solid var(--glass-border);
+        color: var(--text);
+        padding: 0.75rem;
+        border-radius: 100px;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 44px;
-        height: 44px;
-        background: var(--surface-light);
-        border: 1px solid var(--border);
-        border-radius: 50%;
-        color: var(--text);
-        font-size: 1.25rem;
         cursor: pointer;
-        z-index: 2000;
-        transition: all 0.3s ease;
-        position: relative;
-        /* Ensure it doesn't drift outside header */
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: var(--shadow-soft);
     }
 
-    .mobile-only:active {
-        transform: scale(0.95);
+    .icon-btn:hover {
+        background: var(--primary);
+        color: var(--bg);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-glow);
+    }
+
+    .icon-btn svg {
+        transition: transform 0.3s ease;
+    }
+
+    .icon-btn:hover svg {
+        transform: rotate(15deg) scale(1.1);
+    }
+
+    .mobile-only {
+        display: none;
     }
 
     .nav-links {
@@ -430,24 +442,38 @@ header.scrolled .logo {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(5px);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 4000;
     padding: 2rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+.modal-overlay:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .modal-content {
     background: var(--surface-light);
     padding: 3rem;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     border: 1px solid var(--border-bright);
     width: 100%;
     max-width: 400px;
     box-shadow: var(--shadow-soft);
     position: relative;
+    transform: scale(0.9) translateY(20px);
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-overlay:not(.hidden) .modal-content {
+    transform: scale(1) translateY(0);
 }
 
 .modal-close,
@@ -497,8 +523,44 @@ header.scrolled .logo {
     margin-bottom: 1rem;
 }
 
+/* Remember me checkbox style */
+.setting-group input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 2px solid var(--border-bright);
+    border-radius: 6px;
+    background: var(--surface-light);
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.setting-group input[type="checkbox"]:checked {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.setting-group input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid var(--bg);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.setting-group input[type="checkbox"]:hover {
+    border-color: var(--primary);
+    transform: translateY(-1px);
+}
+
 .auth-toggle {
-    margin-top: 1rem;
+    margin-top: 1.5rem;
     text-align: center;
     font-size: 0.9rem;
     color: var(--text-muted);
@@ -804,27 +866,27 @@ header.scrolled .logo {
 
 /* Page Specific Heros - Lighter & Refined */
 .hero-home {
-    background-image: linear-gradient(rgba(8, 9, 10, 0.35), var(--bg)), url('assets/images/heroes/hero.png');
+    background-image: linear-gradient(rgba(8, 9, 10, 0.45), var(--bg)), url('assets/images/heroes/hero-home-v3.png');
 }
 
 .hero-sitting {
-    background-image: linear-gradient(rgba(8, 9, 10, 0.35), var(--bg)), url('assets/images/heroes/hero-sitting.png');
+    background-image: linear-gradient(rgba(8, 9, 10, 0.4), var(--bg)), url('assets/images/heroes/hero-sitting-v3.png');
 }
 
 .hero-standing {
-    background-image: linear-gradient(rgba(8, 9, 10, 0.35), var(--bg)), url('assets/images/heroes/hero-standing.png');
+    background-image: linear-gradient(rgba(8, 9, 10, 0.4), var(--bg)), url('assets/images/heroes/hero-standing-v3.png');
 }
 
 .hero-research {
-    background-image: linear-gradient(rgba(8, 9, 10, 0.35), var(--bg)), url('assets/images/heroes/hero-research.png');
+    background-image: linear-gradient(rgba(8, 9, 10, 0.45), var(--bg)), url('assets/images/heroes/hero-research-v3.png');
 }
 
 .hero-resources {
-    background-image: linear-gradient(rgba(8, 9, 10, 0.35), var(--bg)), url('assets/images/heroes/hero-resources.png');
+    background-image: linear-gradient(rgba(8, 9, 10, 0.45), var(--bg)), url('assets/images/heroes/hero-resources-v3.png');
 }
 
 .hero-exercises {
-    background-image: linear-gradient(rgba(8, 9, 10, 0.35), var(--bg)), url('assets/images/heroes/hero.png');
+    background-image: linear-gradient(rgba(8, 9, 10, 0.45), var(--bg)), url('assets/images/heroes/hero-exercises-v3.png');
 }
 
 .hero-section h2 {
@@ -1124,8 +1186,10 @@ textarea {
     border-left: 1px solid var(--border);
     z-index: 2000;
     padding: 3rem;
-    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
+    box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
 }
 
 .settings-panel.hidden {
@@ -1342,27 +1406,38 @@ textarea:focus {
 }
 
 /* Buttons */
+/* Icons Buttons Premium 2.0 */
 .icon-btn {
-    background: var(--surface-light);
-    border: 1px solid var(--border);
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    color: var(--text);
+    padding: 0.75rem;
+    border-radius: 100px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
-    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-soft);
+    width: auto;
+    height: auto;
+    min-width: 48px;
+    min-height: 48px;
 }
 
 .icon-btn:hover {
-    background: rgba(168, 195, 181, 0.1);
-    border-color: var(--primary);
-    color: var(--primary);
+    background: var(--primary);
+    color: var(--bg);
     transform: translateY(-2px);
     box-shadow: var(--shadow-glow);
+}
+
+.icon-btn svg {
+    transition: transform 0.3s ease;
+}
+
+.icon-btn:hover svg {
+    transform: rotate(15deg) scale(1.1);
 }
 
 .secondary-btn {

@@ -34,7 +34,8 @@ class WellnessApp {
         this.model = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
         this.systemPrompt = localStorage.getItem('system_prompt') || DEFAULT_PROMPT;
 
-        this.currentUser = JSON.parse(localStorage.getItem('current_warrior_user')) || null;
+        this.currentUser = JSON.parse(localStorage.getItem('current_warrior_user')) ||
+            JSON.parse(sessionStorage.getItem('current_warrior_user')) || null;
         this.history = JSON.parse(localStorage.getItem('warrior_history_' + (this.currentUser?.email || 'anon'))) || [];
         this.isSignup = false;
 
@@ -138,6 +139,7 @@ class WellnessApp {
         this.authRoleGroup = document.getElementById('auth-role-group');
         this.authRoleSelect = document.getElementById('auth-role');
 
+        this.authRemember = document.getElementById('auth-remember');
         this.forgotPasswordBtn = document.getElementById('forgot-password-btn');
         this.resetView = document.getElementById('reset-view');
         this.loginView = document.getElementById('login-view');
@@ -430,7 +432,14 @@ class WellnessApp {
         }
 
         this.currentUser = { email, role: users[email].role };
-        localStorage.setItem('current_warrior_user', JSON.stringify(this.currentUser));
+
+        if (this.authRemember && this.authRemember.checked) {
+            localStorage.setItem('current_warrior_user', JSON.stringify(this.currentUser));
+            sessionStorage.removeItem('current_warrior_user');
+        } else {
+            sessionStorage.setItem('current_warrior_user', JSON.stringify(this.currentUser));
+            localStorage.removeItem('current_warrior_user');
+        }
 
         // Load history for this user
         this.history = JSON.parse(localStorage.getItem('warrior_history_' + this.currentUser.email)) || [];
@@ -784,11 +793,11 @@ class WellnessApp {
 
             if (isActive) {
                 this.navLinks.classList.add('active');
-                this.mobileMenuToggle.innerText = '✕';
+                this.mobileMenuToggle.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>';
                 document.body.style.overflow = 'hidden'; // Lock scroll
             } else {
                 this.navLinks.classList.remove('active');
-                this.mobileMenuToggle.innerText = '☰';
+                this.mobileMenuToggle.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>';
                 document.body.style.overflow = ''; // Unlock scroll
             }
         }
