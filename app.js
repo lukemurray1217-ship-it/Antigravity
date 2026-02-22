@@ -1606,16 +1606,22 @@ class WellnessApp {
             rootMargin: '0px 0px -50px 0px'
         };
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
-            });
-        }, observerOptions);
+        // Reuse existing observer if possible, or create new one
+        if (!this.revealObserver) {
+            this.revealObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        // Once visible, we can stop observing this specific element
+                        this.revealObserver.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+        }
 
-        document.querySelectorAll('.reveal').forEach(el => {
-            observer.observe(el);
+        // Observe all reveal elements that aren't already visible
+        document.querySelectorAll('.reveal:not(.visible)').forEach(el => {
+            this.revealObserver.observe(el);
         });
     }
 }

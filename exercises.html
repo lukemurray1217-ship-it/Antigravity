@@ -292,6 +292,11 @@
                     }, 500);
                 }
             }
+
+            // Sync reveal animation for dynamically added content
+            if (window.app && window.app.initRevealOnScroll) {
+                window.app.initRevealOnScroll();
+            }
         });
     </script>
     <a href="index.html" class="floating-logo" title="Back to Home">
