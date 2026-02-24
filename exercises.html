@@ -94,7 +94,7 @@
         </div>
 
         <main>
-            <section class="hero-section hero-exercises reveal">
+            <section class="hero-section hero-exercises">
                 <div class="content-container">
                     <h2 id="exercises-title">All Exercises</h2>
                     <p id="exercises-subtitle">A comprehensive collection of movements to keep you feeling your best.
@@ -109,7 +109,7 @@
                 </div>
             </section>
 
-            <div class="content-area reveal">
+            <div class="content-area">
                 <div class="content-container">
                     <div class="exercise-grid" id="all-exercises-list">
                         <!-- Will be populated by JS -->
@@ -233,24 +233,44 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const list = document.getElementById('all-exercises-list');
-            list.className = 'exercise-sections-list'; // Update class for new layout
+            if (!list) return;
+            list.className = 'exercise-sections-list';
 
-            EXERCISES.forEach((ex, index) => {
+            if (typeof EXERCISES === 'undefined') {
+                console.error("EXERCISES data not found. Ensure exercises.js is loaded.");
+                list.innerHTML = '<div class="info-card"><h3>Error Loading Exercises</h3><p>Please refresh the page.</p></div>';
+                return;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const idsParam = urlParams.get('ids');
+            let displayedExercises = EXERCISES;
+            let isFiltered = false;
+
+            if (idsParam) {
+                const ids = idsParam.split(',').map(id => id.trim().toLowerCase());
+                displayedExercises = EXERCISES.filter(ex => ids.includes(ex.id.toLowerCase()));
+                isFiltered = true;
+            }
+
+            if (displayedExercises.length === 0) {
+                list.innerHTML = '<div class="info-card"><h3>No exercises found</h3><p>Try refreshing or clearing your filters.</p></div>';
+            }
+
+            displayedExercises.forEach((ex, index) => {
                 const section = document.createElement('section');
                 section.className = 'exercise-section';
                 section.id = ex.id;
 
                 // Create badges for sitting/standing options
-                const optionsHtml = ex.options.map(opt => {
+                const optionsHtml = (ex.options || []).map(opt => {
                     const badgeClass = opt.toLowerCase().includes('sitting') ? 'badge-sitting' : 'badge-standing';
                     return `<span class="option-badge ${badgeClass}">${opt}</span>`;
                 }).join('');
 
                 // Create detailed workout steps grid
-                const workoutStepsHtml = ex.workout.map((step, i) => {
-                    // Placeholder logic for missing images
+                const workoutStepsHtml = (ex.workout || []).map((step, i) => {
                     const stepImage = step.image || `https://placehold.co/600x400/e2e8f0/475569?text=Step+${i + 1}`;
-
                     return `
                     <div class="step-card">
                         <div class="step-image-wrapper">
@@ -281,17 +301,8 @@
                 `;
                 list.appendChild(section);
             });
-            // URL param filtering – show only recommended exercises (default stretch ensured in app.js)
-            const urlParams = new URLSearchParams(window.location.search);
-            const idsParam = urlParams.get('ids');
-            if (idsParam) {
-                const ids = idsParam.split(',');
-                document.querySelectorAll('.exercise-section').forEach(sec => {
-                    if (!ids.includes(sec.id)) {
-                        sec.style.display = 'none';
-                    }
-                });
 
+            if (isFiltered) {
                 // UX Polish for filtered view
                 const title = document.getElementById('exercises-title');
                 const subtitle = document.getElementById('exercises-subtitle');
@@ -301,7 +312,6 @@
                 if (subtitle) subtitle.textContent = "This personalized sequence has been tailored to your specific needs by Warrior Bot. Follow the steps below in order.";
                 if (navBtns) navBtns.classList.remove('hidden');
 
-                // Handle clear filter
                 const clearBtn = document.getElementById('clear-filter-btn');
                 if (clearBtn) {
                     clearBtn.addEventListener('click', () => {

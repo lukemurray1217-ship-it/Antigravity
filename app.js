@@ -1575,25 +1575,27 @@ class WellnessApp {
         // Scroll to top to ensure the user sees the start of the protocol
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        let protocol = null;
-        let displayMsg = '';
-        let recommendedIds = [];
-
         try {
             // Attempt to parse JSON. Clean up markdown code blocks if present.
             const jsonText = text.replace(/```json/g, '').replace(/```/g, '').trim();
             protocol = JSON.parse(jsonText);
 
             displayMsg = protocol.coach_message;
-            recommendedIds = protocol.exercises.map(e => e.id);
+            // Ensure IDs are strings and trimmed
+            recommendedIds = protocol.exercises.map(e => String(e.id).trim().toLowerCase());
         } catch (e) {
             console.warn("JSON Parse Failed, falling back to legacy regex or text search", e);
             displayMsg = text;
             const idMatch = text.match(/RECOMMENDED_IDS:\s*\[(.*?)\]/s);
             if (idMatch) {
-                recommendedIds = idMatch[1].split(',').map(id => id.trim().replace(/['"“”‘’]/g, ''));
+                recommendedIds = idMatch[1].split(',').map(id => id.trim().replace(/[\'\"“”‘’]/g, '').toLowerCase());
             }
         }
+
+        // --- NEW: Sanitize for Exercise Display ---
+        // Some LLMs might return IDs that don't match our EXERCISES list exactly (case or extra spaces)
+        let matchedExercises = EXERCISES.filter(ex => recommendedIds.includes(ex.id.toLowerCase()));
+        let finalIds = matchedExercises.map(ex => ex.id);
 
         // Render Protocol Card with Back Button
         this.geminiResponse.innerHTML = `
@@ -1613,10 +1615,10 @@ class WellnessApp {
                     ${marked.parse(displayMsg)}
                 </div>
                 ${(() => {
-                const ids = recommendedIds.slice();
+                const idsForUrl = finalIds.slice();
                 const defaultStretch = 'seated-neck-release';
-                if (!ids.includes(defaultStretch)) ids.push(defaultStretch);
-                const url = 'exercises.html?ids=' + encodeURIComponent(ids.join(','));
+                if (!idsForUrl.includes(defaultStretch)) idsForUrl.push(defaultStretch);
+                const url = 'exercises.html?ids=' + encodeURIComponent(idsForUrl.join(','));
                 return `
                     <a href="${url}" class="secondary-btn" style="margin-top: 1rem; display: inline-block;">View All Exercises</a>
                     <a href="${url}" class="primary-btn" style="margin-top: 1rem; margin-left: 0.5rem; display: inline-block;">Start Protocol</a>`;
@@ -1633,10 +1635,11 @@ class WellnessApp {
         this.exerciseList.innerHTML = '';
         this.exerciseList.className = 'exercise-sections-list'; // Ensure class
 
-        let selectedExercises = EXERCISES.filter(ex => recommendedIds.includes(ex.id));
+        if (matchedExercises.length === 0 && recommendedIds.length > 0) {
+            console.warn("No exercises matched recommended IDs:", recommendedIds);
+        }
 
-
-        selectedExercises.forEach((ex, index) => {
+        matchedExercises.forEach((ex, index) => {
             const card = document.createElement('div');
             card.className = 'exercise-card';
 

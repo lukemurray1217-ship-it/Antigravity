@@ -615,19 +615,19 @@ const EXERCISES = [
         description: "Specific stretch for thumb tendons (De Quervain's tenosynovitis).",
         benefit: "Relieves thumb pain from texting/mouse.",
         icon: "👍",
-        illustration: "assets/illustrations/thumb-fist.png",
+        illustration: "assets/illustrations/steps/finkel-1.png",
         workout: [
             {
                 subtitle: "Tuck",
                 duration: "10s",
                 instruction: "Tuck thumb inside palm and make a fist over it.",
-                image: "assets/illustrations/steps/thumb-1.png"
+                image: "assets/illustrations/steps/finkel-1.png"
             },
             {
                 subtitle: "Tilt",
                 duration: "30s",
                 instruction: "Gently tilt fist downward (ulnar deviation). Feel stretch on thumb side wrist.",
-                image: "assets/illustrations/steps/thumb-2.png"
+                image: "assets/illustrations/steps/finkel-2.png"
             }
         ],
         options: ["Sitting", "Standing"]
