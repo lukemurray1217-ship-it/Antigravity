@@ -18,12 +18,25 @@ export default async function handler(req, res) {
     }
 
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY || process.env.MY_API_KEY;
 
         const { contents, model, password } = req.body;
 
         // Verify password if ACCESS_PASSWORD is set
         const accessPassword = process.env.ACCESS_PASSWORD;
+
+        // Debug logging for environment (without values)
+        console.log('Environment Check:', {
+            hasGeminiKey: !!process.env.GEMINI_API_KEY,
+            hasMyKey: !!process.env.MY_API_KEY,
+            hasAccessPassword: !!process.env.ACCESS_PASSWORD,
+            providedPassword: !!password
+        });
+
+        if (!apiKey) {
+            return res.status(500).json({ error: { message: 'API key not configured on server (GEMINI_API_KEY or MY_API_KEY missing).' } });
+        }
+
         if (accessPassword && password !== accessPassword) {
             return res.status(401).json({ error: { message: 'Incorrect Access Password. Please check your settings.' } });
         }
