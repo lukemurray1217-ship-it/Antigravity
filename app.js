@@ -1343,10 +1343,30 @@ class WellnessApp {
 
 
     setLoading(isLoading) {
+        if (!this.getBtn) return;
+        this.getBtn.disabled = isLoading;
+        this.getBtn.innerHTML = isLoading ? '<span class="loader"></span> Generating...' : 'Get Protocol';
+
         if (isLoading) {
-            this.loadingOverlay.classList.remove('hidden');
-        } else {
-            this.loadingOverlay.classList.add('hidden');
+            // Show skeleton loaders in the exercise list area
+            const heroSection = document.querySelector('.hero-section');
+            if (heroSection) heroSection.classList.add('hidden');
+            this.resultSection.classList.remove('hidden');
+            this.geminiResponse.innerHTML = `
+                <div class="skeleton-protocol">
+                    <div class="skeleton-line short shimmer"></div>
+                    <div class="skeleton-line shimmer" style="height: 2rem; margin: 1rem 0;"></div>
+                    <div class="skeleton-line shimmer"></div>
+                    <div class="skeleton-line medium shimmer"></div>
+                </div>
+            `;
+            this.exerciseList.innerHTML = `
+                <div class="skeleton-card shimmer"></div>
+                <div class="skeleton-card shimmer"></div>
+                <div class="skeleton-card shimmer"></div>
+            `;
+            this.exerciseList.className = 'exercise-sections-list';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
 
@@ -1567,43 +1587,73 @@ class WellnessApp {
     }
 
     renderResult(text) {
-        // Toggle Views: Hide Hero, Show Result
+        // Hide Hero, Ensure Result is visible
         const heroSection = document.querySelector('.hero-section');
         if (heroSection) heroSection.classList.add('hidden');
         this.resultSection.classList.remove('hidden');
-
-        // Scroll to top to ensure the user sees the start of the protocol
-        window.scrollTo({ top: 0, behavior: 'smooth' });
 
         let protocol = null;
         let displayMsg = '';
         let recommendedIds = [];
 
         try {
-            // Attempt to parse JSON. Clean up markdown code blocks if present.
             const jsonText = text.replace(/```json/g, '').replace(/```/g, '').trim();
             protocol = JSON.parse(jsonText);
-
             displayMsg = protocol.coach_message;
-            // Ensure IDs are strings and trimmed
             recommendedIds = protocol.exercises.map(e => String(e.id).trim().toLowerCase());
         } catch (e) {
             console.warn("JSON Parse Failed, falling back to legacy regex or text search", e);
             displayMsg = text;
             const idMatch = text.match(/RECOMMENDED_IDS:\s*\[(.*?)\]/s);
             if (idMatch) {
-                recommendedIds = idMatch[1].split(',').map(id => id.trim().replace(/[\'\"“”‘’]/g, '').toLowerCase());
+                recommendedIds = idMatch[1].split(',').map(id => id.trim().replace(/['"“”‘’]/g, '').toLowerCase());
             }
         }
 
-        // --- NEW: Sanitize for Exercise Display ---
-        // Some LLMs might return IDs that don't match our EXERCISES list exactly (case or extra spaces)
-        let matchedExercises = EXERCISES.filter(ex => recommendedIds.includes(ex.id.toLowerCase()));
-        let finalIds = matchedExercises.map(ex => ex.id);
+        const matchedExercises = EXERCISES.filter(ex => recommendedIds.includes(ex.id.toLowerCase()));
+        const finalIds = matchedExercises.map(ex => ex.id);
 
-        // Render Protocol Card with Back Button
-        this.geminiResponse.innerHTML = `
-            <div class="protocol-card">
+        // Render Protocol Card
+        this.geminiResponse.innerHTML = this.createProtocolCard(protocol, finalIds, displayMsg);
+
+        // Attach Back Listener
+        const backBtn = document.getElementById('back-to-home');
+        if (backBtn) backBtn.addEventListener('click', () => this.resetView());
+
+        // Render Exercise Cards
+        this.exerciseList.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+
+        if (matchedExercises.length === 0 && recommendedIds.length > 0) {
+            console.warn("No exercises matched recommended IDs:", recommendedIds);
+        }
+
+        matchedExercises.forEach(ex => {
+            const card = document.createElement('div');
+            card.className = 'exercise-card fade-up';
+            card.innerHTML = this.createExerciseCard(ex);
+            fragment.appendChild(card);
+        });
+
+        this.exerciseList.appendChild(fragment);
+
+        // Scroll to results and trigger animations
+        this.resultSection.scrollIntoView({ behavior: 'smooth' });
+        setTimeout(() => {
+            document.querySelectorAll('.exercise-card').forEach((card, i) => {
+                setTimeout(() => card.classList.add('visible'), i * 150);
+            });
+        }, 100);
+
+        this.initRevealOnScroll();
+    }
+
+    createProtocolCard(protocol, finalIds, displayMsg) {
+        const idsForUrl = [...new Set([...finalIds, 'seated-neck-release'])];
+        const url = 'exercises.html?ids=' + encodeURIComponent(idsForUrl.join(','));
+
+        return `
+            <div class="protocol-card fade-up visible">
                 <button id="back-to-home" class="text-btn" style="margin-bottom: 1.5rem; padding: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted);">
                     <span>←</span> Back to Home
                 </button>
@@ -1618,52 +1668,23 @@ class WellnessApp {
                     <p style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Clinical Justification</p>
                     ${marked.parse(displayMsg)}
                 </div>
-                ${(() => {
-                const idsForUrl = finalIds.slice();
-                const defaultStretch = 'seated-neck-release';
-                if (!idsForUrl.includes(defaultStretch)) idsForUrl.push(defaultStretch);
-                const url = 'exercises.html?ids=' + encodeURIComponent(idsForUrl.join(','));
-                return `
-                    <a href="${url}" class="secondary-btn" style="margin-top: 1rem; display: inline-block;">View All Exercises</a>
-                    <a href="${url}" class="primary-btn" style="margin-top: 1rem; margin-left: 0.5rem; display: inline-block;">Start Protocol</a>`;
-            })()}
+                <a href="${url}" class="secondary-btn" style="margin-top: 1rem; display: inline-block;">View All Exercises</a>
+                <a href="${url}" class="primary-btn" style="margin-top: 1rem; margin-left: 0.5rem; display: inline-block;">Start Protocol</a>
             </div>
         `;
+    }
 
-        // Attach listener to new back button
-        document.getElementById('back-to-home').addEventListener('click', () => {
-            this.resetView();
-        });
-
-        // Render cards
-        this.exerciseList.innerHTML = '';
-        this.exerciseList.className = 'exercise-sections-list'; // Ensure class
-
-        if (matchedExercises.length === 0 && recommendedIds.length > 0) {
-            console.warn("No exercises matched recommended IDs:", recommendedIds);
-        }
-
-        matchedExercises.forEach((ex, index) => {
-            const card = document.createElement('div');
-            card.className = 'exercise-card';
-
-            card.innerHTML = `
-                <div class="card-icon">${ex.icon}</div>
-                <h3>${ex.title}</h3>
-                <span class="category-tag">Exercise</span>
-                <p>${ex.description}</p>
-                <div class="benefit">
-                    <strong>Benefit:</strong> ${ex.benefit}
-                </div>
-                <a href="exercises.html#${ex.id}" class="secondary-btn" style="margin-top: 1rem; text-decoration: none; text-align: center;">View Details</a>
-            `;
-            this.exerciseList.appendChild(card);
-        });
-
-        // Scroll to results
-        this.resultSection.scrollIntoView({ behavior: 'smooth' });
-        // Initialize Scroll Reveal for new elements
-        this.initRevealOnScroll();
+    createExerciseCard(ex) {
+        return `
+            <div class="card-icon">${ex.icon}</div>
+            <h3>${ex.title}</h3>
+            <span class="category-tag">Exercise</span>
+            <p>${ex.description}</p>
+            <div class="benefit">
+                <strong>Benefit:</strong> ${ex.benefit}
+            </div>
+            <a href="exercises.html#${ex.id}" class="secondary-btn" style="margin-top: 1rem; text-decoration: none; text-align: center;">View Details</a>
+        `;
     }
 
     resetView() {

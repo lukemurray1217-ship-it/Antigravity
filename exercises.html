@@ -109,10 +109,32 @@
                 </div>
             </section>
 
+            <div class="search-filter-container">
+                <div class="search-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                        <path
+                            d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                    </svg>
+                    <input type="text" id="exercise-search" placeholder="Search exercises by name or benefit...">
+                </div>
+                <div class="filter-chips">
+                    <button class="filter-chip active" data-filter="all">All</button>
+                    <button class="filter-chip" data-filter="sitting">Sitting</button>
+                    <button class="filter-chip" data-filter="standing">Standing</button>
+                    <button class="filter-chip" data-filter="eyes">Eye Care</button>
+                    <button class="filter-chip" data-filter="breath">Breathwork</button>
+                </div>
+            </div>
+
             <div class="content-area">
                 <div class="content-container">
                     <div class="exercise-grid" id="all-exercises-list">
                         <!-- Will be populated by JS -->
+                    </div>
+                    <!-- Empty State -->
+                    <div id="exercise-empty-state" class="hidden" style="text-align: center; padding: 4rem 2rem;">
+                        <h3 style="color: var(--text-muted); margin-bottom: 1rem;">No exercises found</h3>
+                        <p>Try refining your search or filter.</p>
                     </div>
 
                     <div class="info-card" style="margin-top: 4rem;">
@@ -231,117 +253,159 @@
 
     <script src="exercises.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const list = document.getElementById('all-exercises-list');
-            if (!list) return;
-            list.className = 'exercise-sections-list';
+        /**
+         * Exercises Library Controller
+         * Handles rendering, searching, and filtering of exercises.
+         */
+        class ExerciseLibrary {
+            constructor() {
+                this.list = document.getElementById('all-exercises-list');
+                this.search = document.getElementById('exercise-search');
+                this.chips = document.querySelectorAll('.filter-chip');
+                this.emptyState = document.getElementById('exercise-empty-state');
 
-            if (typeof EXERCISES === 'undefined') {
-                console.error("EXERCISES data not found. Ensure exercises.js is loaded.");
-                list.innerHTML = '<div class="info-card"><h3>Error Loading Exercises</h3><p>Please refresh the page.</p></div>';
-                return;
+                this.allExercises = typeof EXERCISES !== 'undefined' ? EXERCISES : [];
+                this.currentFilter = 'all';
+                this.searchTerm = '';
+
+                this.init();
             }
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const idsParam = urlParams.get('ids');
-            let displayedExercises = EXERCISES;
-            let isFiltered = false;
+            init() {
+                if (!this.list || this.allExercises.length === 0) {
+                    if (this.list) this.list.innerHTML = '<div class="info-card"><h3>Error</h3><p>Could not load exercises.</p></div>';
+                    return;
+                }
 
-            if (idsParam) {
-                const ids = idsParam.split(',').map(id => id.trim().toLowerCase());
-                displayedExercises = EXERCISES.filter(ex => ids.includes(ex.id.toLowerCase()));
-                isFiltered = true;
+                this.list.className = 'exercise-sections-list';
+
+                // Set up search
+                this.search.addEventListener('input', (e) => {
+                    this.searchTerm = e.target.value.toLowerCase();
+                    this.render();
+                });
+
+                // Set up filters
+                this.chips.forEach(chip => {
+                    chip.addEventListener('click', () => {
+                        this.chips.forEach(c => c.classList.remove('active'));
+                        chip.classList.add('active');
+                        this.currentFilter = chip.dataset.filter;
+                        this.render();
+                    });
+                });
+
+                // Handle URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const idsParam = urlParams.get('ids');
+                if (idsParam) {
+                    const ids = idsParam.split(',').map(id => id.trim().toLowerCase());
+                    this.allExercises = this.allExercises.filter(ex => ids.includes(ex.id.toLowerCase()));
+                    this.setupFilteredView();
+                }
+
+                this.render();
+                this.handleDeepLink();
             }
 
-            if (displayedExercises.length === 0) {
-                list.innerHTML = '<div class="info-card"><h3>No exercises found</h3><p>Try refreshing or clearing your filters.</p></div>';
+            setupFilteredView() {
+                const title = document.getElementById('exercises-title');
+                const subtitle = document.getElementById('exercises-subtitle');
+                const navBtns = document.getElementById('protocol-nav-btns');
+                const searchFilters = document.querySelector('.search-filter-container');
+
+                if (title) title.textContent = "Your Warrior Protocol";
+                if (subtitle) subtitle.textContent = "This personalized sequence has been tailored to your specific needs by Warrior Bot.";
+                if (navBtns) navBtns.classList.remove('hidden');
+                if (searchFilters) searchFilters.classList.add('hidden'); // Hide filters in protocol mode
+
+                const clearBtn = document.getElementById('clear-filter-btn');
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', () => { window.location.href = 'exercises.html'; });
+                }
             }
 
-            displayedExercises.forEach((ex, index) => {
-                const section = document.createElement('section');
-                section.className = 'exercise-section';
-                section.id = ex.id;
+            render() {
+                const filtered = this.allExercises.filter(ex => {
+                    const matchesSearch = ex.title.toLowerCase().includes(this.searchTerm) ||
+                        ex.benefit.toLowerCase().includes(this.searchTerm) ||
+                        ex.description.toLowerCase().includes(this.searchTerm);
 
-                // Create badges for sitting/standing options
+                    let matchesFilter = true;
+                    if (this.currentFilter === 'sitting') matchesFilter = ex.id.includes('seated') || (ex.options && ex.options.includes('Sitting'));
+                    if (this.currentFilter === 'standing') matchesFilter = ex.id.includes('standing') || (ex.options && ex.options.includes('Standing'));
+                    if (this.currentFilter === 'eyes') matchesFilter = ex.id.includes('eye') || ex.id.includes('palming');
+                    if (this.currentFilter === 'breath') matchesFilter = ex.id.includes('box-breathing') || ex.id.includes('lion');
+
+                    return matchesSearch && matchesFilter;
+                });
+
+                this.list.innerHTML = '';
+                this.emptyState.classList.toggle('hidden', filtered.length > 0);
+
+                const fragment = document.createDocumentFragment();
+                filtered.forEach(ex => {
+                    const section = document.createElement('section');
+                    section.className = 'exercise-section';
+                    section.id = ex.id;
+                    section.innerHTML = this.getExerciseTemplate(ex);
+                    fragment.appendChild(section);
+                });
+
+                this.list.appendChild(fragment);
+
+                // Re-init reveal animations
+                if (window.app && window.app.initRevealOnScroll) window.app.initRevealOnScroll();
+            }
+
+            getExerciseTemplate(ex) {
                 const optionsHtml = (ex.options || []).map(opt => {
                     const badgeClass = opt.toLowerCase().includes('sitting') ? 'badge-sitting' : 'badge-standing';
                     return `<span class="option-badge ${badgeClass}">${opt}</span>`;
                 }).join('');
 
-                // Create detailed workout steps grid
-                const workoutStepsHtml = (ex.workout || []).map((step, i) => {
-                    const stepImage = step.image || `https://placehold.co/600x400/e2e8f0/475569?text=Step+${i + 1}`;
-                    return `
+                const workoutStepsHtml = (ex.workout || []).map((step, i) => `
                     <div class="step-card">
                         <div class="step-image-wrapper">
-                            <img src="${stepImage}" alt="${step.subtitle || 'Step ' + (i + 1)}" onerror="this.src='https://placehold.co/600x400/e2e8f0/475569?text=Image+Missing'">
+                            <img src="${step.image}" alt="${step.subtitle}" onerror="this.src='https://placehold.co/600x400/e2e8f0/475569?text=Image+Missing'">
                             <span class="step-badge">${step.duration}</span>
                         </div>
                         <div class="step-details">
                             <h5>${step.subtitle || 'Step ' + (i + 1)}</h5>
                             <p>${step.instruction}</p>
                         </div>
-                    </div>`;
-                }).join('');
+                    </div>`).join('');
 
-                section.innerHTML = `
+                return `
                     <div class="exercise-header-group">
                         <div class="option-badges">${optionsHtml}</div>
                         <h3>${ex.title}</h3>
                         <span class="section-benefit">${ex.benefit}</span>
                         <p class="section-description">${ex.description}</p>
                     </div>
-                    
                     <div class="workout-visual-container">
                         <h4><span class="pulse-dot"></span> Guided Protocol</h4>
-                        <div class="step-grid">
-                            ${workoutStepsHtml}
-                        </div>
-                    </div>
-                `;
-                list.appendChild(section);
-            });
-
-            if (isFiltered) {
-                // UX Polish for filtered view
-                const title = document.getElementById('exercises-title');
-                const subtitle = document.getElementById('exercises-subtitle');
-                const navBtns = document.getElementById('protocol-nav-btns');
-
-                if (title) title.textContent = "Your Warrior Protocol";
-                if (subtitle) subtitle.textContent = "This personalized sequence has been tailored to your specific needs by Warrior Bot. Follow the steps below in order.";
-                if (navBtns) navBtns.classList.remove('hidden');
-
-                const clearBtn = document.getElementById('clear-filter-btn');
-                if (clearBtn) {
-                    clearBtn.addEventListener('click', () => {
-                        window.location.href = 'exercises.html';
-                    });
-                }
+                        <div class="step-grid">${workoutStepsHtml}</div>
+                    </div>`;
             }
 
-            // Handle deep linking and highlighting
-            const hash = window.location.hash;
-            if (hash) {
-                const targetId = hash.substring(1);
-                const targetEl = document.getElementById(targetId);
-                if (targetEl) {
-                    setTimeout(() => {
-                        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        targetEl.classList.add('highlight-pulse');
-
-                        // Remove highlight after a few seconds
+            handleDeepLink() {
+                const hash = window.location.hash;
+                if (hash) {
+                    const targetEl = document.getElementById(hash.substring(1));
+                    if (targetEl) {
                         setTimeout(() => {
-                            targetEl.classList.remove('highlight-pulse');
-                        }, 6000);
-                    }, 500);
+                            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            targetEl.classList.add('highlight-pulse');
+                        }, 500);
+                    }
                 }
             }
+        }
 
-            // Sync reveal animation for dynamically added content
-            if (window.app && window.app.initRevealOnScroll) {
-                window.app.initRevealOnScroll();
-            }
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            window.exerciseLibrary = new ExerciseLibrary();
         });
     </script>
     <a href="index.html" class="floating-logo" title="Back to Home">
