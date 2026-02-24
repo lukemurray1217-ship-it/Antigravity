@@ -1575,6 +1575,10 @@ class WellnessApp {
         // Scroll to top to ensure the user sees the start of the protocol
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
+        let protocol = null;
+        let displayMsg = '';
+        let recommendedIds = [];
+
         try {
             // Attempt to parse JSON. Clean up markdown code blocks if present.
             const jsonText = text.replace(/```json/g, '').replace(/```/g, '').trim();
