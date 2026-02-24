@@ -2,17 +2,21 @@ const DEFAULT_PROMPT = `You are "Warrior Bot", an elite clinical wellness and er
 Your primary objective is to recommend 2-3 specific exercises from the provided library that DIRECTLY address the user's specific physical problem or goal.
 
 STRICT RELEVANCE RULES:
-1.  **Direct Connection**: Every recommended exercise must have a clear, mechanical link to the user's symptoms (e.g., if wrists hurt, recommend forearm stretches).
-2.  **Explicit Justification**: In the "coach_message", you MUST explicitly explain WHY these exercises help their specific issue (e.g., "Since your lower back is tight from sitting, we'll focus on hip openers to release the anterior chain...").
-3.  **Comprehensive Context**: If the user mentions a group or a specific work context (e.g., "coding for 8 hours"), tailor the tone and advice to that professional environment.
-4.  **Leadership & Org Health**: If the user acts as a Group Leader or CEO inquiring about organizational health, provide empathetic, high-level wellness strategy advice alongside specific exercise recommendations for their own maintenance.
+1.  **Anatomical Targeting**: If the user mentions a specific body part (e.g. "back", "neck", "wrists", "hips"), you MUST prioritize exercises that mechanically release or strengthen that exact area. 
+2.  **Symptom Mapping**: 
+    - Back pain -> Spinal mobility/decompression (Cat-Cow, Twist, Pigeon, Forward Fold).
+    - Neck/Head tension -> Neck releases, chin tucks, SCM stretches.
+    - Wrist/Hand fatigue -> Tendon glides, wrist relief, prayer stretches.
+    - Hip tightness -> Lunges, figure-4, glute activation.
+3.  **Explicit Justification**: In the "coach_message", you MUST explicitly explain WHY these exercises help their specific issue (e.g., "Since your lower back is tight from sitting, we'll focus on hip openers to release the anterior chain...").
+4.  **Comprehensive Context**: If the user mentions a work context (e.g., "coding for 8 hours"), tailor the advice to that environment.
 
 STRICT JSON OUTPUT FORMAT:
 You must output ONLY valid JSON. No markdown formatting.
 Structure:
 {
   "coach_message": "A professional yet warm 2-3 sentence justification linking the user's problem to the recommended protocol.",
-  "protocol_name": "A descriptive name (e.g., 'Carpal Tunnel Shield Protocol')",
+  "protocol_name": "A descriptive name (e.g., 'Lower Back Decompression')",
   "exercises": [
     { 
       "id": "id-from-list", 
@@ -22,7 +26,7 @@ Structure:
 }
 
 Available Exercises:
-\${JSON.stringify(EXERCISES.map(e => ({id: e.id, title: e.title, benefit: e.benefit})))}
+${JSON.stringify(EXERCISES.map(e => ({ id: e.id, title: e.title, benefit: e.benefit, description: e.description })))}
 
 CRITICAL:
 - NEVER hallucinate exercise IDs.
@@ -57,6 +61,7 @@ class WellnessApp {
         // Auto-optimize model on load
         this.optimizeModelSelection();
         this.syncBottomNav();
+        this.initOnboarding();
     }
 
     smoothTransition(element, show) {
@@ -256,6 +261,11 @@ class WellnessApp {
         this.leaderboardBody = document.getElementById('leaderboard-body');
         this.corpIndex = document.getElementById('corporate-overview');
         this.leaderImpactCard = document.getElementById('leader-impact-card');
+
+        // NEW: Onboarding Elements
+        this.onboardingBanner = document.getElementById('onboarding-banner');
+        this.onboardingClose = document.getElementById('onboarding-close');
+        this.onboardingAction = document.getElementById('onboarding-action');
     }
 
     initEventListeners() {
@@ -348,6 +358,18 @@ class WellnessApp {
                         setTimeout(() => this.feelingInput.classList.remove('highlight-pulse'), 2000);
                     }
                 }
+            });
+        }
+
+        if (this.onboardingBanner) {
+            this.onboardingClose.addEventListener('click', () => {
+                this.onboardingBanner.classList.add('hidden');
+                localStorage.setItem('warrior_onboarding_dismissed', 'true');
+            });
+            this.onboardingAction.addEventListener('click', () => {
+                this.toggleSettings(true);
+                // Pulse effects on key setup areas
+                this.pulseSettingsSteps();
             });
         }
     }
@@ -1837,6 +1859,38 @@ class WellnessApp {
                 </td>
             </tr>
         `).join('');
+    }
+
+    /* --- ONBOARDING LOGIC --- */
+    initOnboarding() {
+        if (!this.onboardingBanner) return;
+
+        // Check if configuration is missing
+        const isPersonalMissing = this.apiMode === 'personal' && !this.apiKey;
+        const isSharedMissing = this.apiMode === 'shared' && !this.sitePassword;
+        const hasDismissed = localStorage.getItem('warrior_onboarding_dismissed');
+
+        if ((isPersonalMissing || isSharedMissing) && !hasDismissed) {
+            this.onboardingBanner.classList.remove('hidden');
+        } else {
+            this.onboardingBanner.classList.add('hidden');
+        }
+    }
+
+    pulseSettingsSteps() {
+        // Highlighting the critical setup areas in settings
+        const targets = [
+            document.querySelector('.premium-toggle-group'),
+            document.getElementById('api-key-group'),
+            document.getElementById('shared-access-group')
+        ];
+
+        targets.forEach(t => {
+            if (t) {
+                t.classList.add('highlight-pulse');
+                setTimeout(() => t.classList.remove('highlight-pulse'), 4000);
+            }
+        });
     }
 }
 
