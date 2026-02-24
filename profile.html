@@ -276,16 +276,29 @@
             </div>
 
             <div class="setting-group">
-                <label for="api-mode">API Access Source</label>
-                <select id="api-mode">
-                    <option value="personal">Personal API Key (Direct)</option>
-                    <option value="shared">Shared Access (Password Protected)</option>
-                </select>
+                <label>API Access Source</label>
+                <div class="segmented-toggle">
+                    <label>
+                        <input type="radio" name="api-mode" value="personal" checked>
+                        <span>Personal Key</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="api-mode" value="shared">
+                        <span>Team Access</span>
+                    </label>
+                </div>
             </div>
 
             <div id="shared-access-group" class="setting-group hidden">
-                <label for="site-password">Shared Access Password</label>
-                <input type="password" id="site-password" placeholder="Enter site-wide password">
+                <label for="site-password">Shared Team Password</label>
+                <div class="verification-container">
+                    <input type="password" id="site-password" placeholder="Enter team password" style="flex: 1;">
+                    <button id="verify-password" class="secondary-btn"
+                        style="width: auto; padding: 0 1rem; height: 44px;">
+                        Verify
+                    </button>
+                </div>
+                <div id="password-status" class="verify-status" style="margin-top: 0.5rem;"></div>
                 <p class="hint" style="margin-top: 0.5rem;">Use the password provided by your organization.</p>
             </div>
 

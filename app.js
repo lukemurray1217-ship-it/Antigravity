@@ -145,8 +145,10 @@ class WellnessApp {
         this.checkModelsBtn = document.getElementById('check-models');
         this.modelDebug = document.getElementById('model-list-debug');
 
-        this.apiModeSelect = document.getElementById('api-mode');
+        this.apiModeRadios = document.querySelectorAll('input[name="api-mode"]');
         this.sitePasswordInput = document.getElementById('site-password');
+        this.verifyPasswordBtn = document.getElementById('verify-password');
+        this.passwordStatus = document.getElementById('password-status');
         this.personalKeyGroup = document.getElementById('personal-key-group');
         this.sharedAccessGroup = document.getElementById('shared-access-group');
 
@@ -262,8 +264,13 @@ class WellnessApp {
         if (this.closeSettings) this.closeSettings.addEventListener('click', () => this.toggleSettings(false));
         if (this.saveSettingsBtn) this.saveSettingsBtn.addEventListener('click', () => this.saveSettings());
         if (this.checkModelsBtn) this.checkModelsBtn.addEventListener('click', () => this.fetchModels());
-        if (this.apiModeSelect) {
-            this.apiModeSelect.addEventListener('change', () => this.toggleApiModeUI());
+        if (this.apiModeRadios) {
+            this.apiModeRadios.forEach(radio => {
+                radio.addEventListener('change', () => this.toggleApiModeUI());
+            });
+        }
+        if (this.verifyPasswordBtn) {
+            this.verifyPasswordBtn.addEventListener('click', () => this.verifySharedPassword());
         }
 
         // Auth Listeners
@@ -1146,20 +1153,67 @@ class WellnessApp {
         if (this.apiKeyInput) this.apiKeyInput.value = this.apiKey;
         if (this.modelInput) this.modelInput.value = this.model;
         if (this.systemPromptInput) this.systemPromptInput.value = this.systemPrompt;
-        if (this.apiModeSelect) this.apiModeSelect.value = this.apiMode;
+
+        if (this.apiModeRadios.length > 0) {
+            this.apiModeRadios.forEach(radio => {
+                radio.checked = (radio.value === this.apiMode);
+            });
+        }
+
         if (this.sitePasswordInput) this.sitePasswordInput.value = this.sitePassword;
         this.toggleApiModeUI();
     }
 
     toggleApiModeUI() {
-        if (!this.apiModeSelect) return;
-        const mode = this.apiModeSelect.value;
+        let mode = 'personal';
+        if (this.apiModeRadios.length > 0) {
+            const checked = Array.from(this.apiModeRadios).find(r => r.checked);
+            if (checked) mode = checked.value;
+        }
+
         if (mode === 'shared') {
             if (this.sharedAccessGroup) this.sharedAccessGroup.classList.remove('hidden');
             if (this.personalKeyGroup) this.personalKeyGroup.classList.add('hidden');
         } else {
             if (this.sharedAccessGroup) this.sharedAccessGroup.classList.add('hidden');
             if (this.personalKeyGroup) this.personalKeyGroup.classList.remove('hidden');
+        }
+    }
+
+    async verifySharedPassword() {
+        const password = this.sitePasswordInput.value.trim();
+        if (!password) {
+            this.showToast('Please enter a password first.');
+            return;
+        }
+
+        if (this.passwordStatus) {
+            this.passwordStatus.className = 'verify-status loading';
+            this.passwordStatus.innerHTML = '<span>⏳</span> Verifying...';
+        }
+
+        try {
+            const url = `/api/models?p=${encodeURIComponent(password)}`;
+            const response = await fetch(url);
+
+            if (response.ok) {
+                if (this.passwordStatus) {
+                    this.passwordStatus.className = 'verify-status success';
+                    this.passwordStatus.innerHTML = '<span>✅</span> Password Verified! Access Granted.';
+                }
+                // Auto-save the password since it's verified
+                this.sitePassword = password;
+                localStorage.setItem('gemini_site_password', password);
+                this.showToast('Team Password verified and saved! 🛡️');
+            } else {
+                throw new Error('Invalid Password');
+            }
+        } catch (error) {
+            if (this.passwordStatus) {
+                this.passwordStatus.className = 'verify-status error';
+                this.passwordStatus.innerHTML = '<span>❌</span> Incorrect password. Try again.';
+            }
+            this.showToast('Verification failed. Please check the password.', 5000);
         }
     }
 
@@ -1175,7 +1229,9 @@ class WellnessApp {
         this.apiKey = this.apiKeyInput.value.trim();
         this.model = this.modelInput.value;
         this.systemPrompt = this.systemPromptInput.value.trim();
-        this.apiMode = this.apiModeSelect ? this.apiModeSelect.value : 'personal';
+
+        const checkedMode = Array.from(this.apiModeRadios).find(r => r.checked);
+        this.apiMode = checkedMode ? checkedMode.value : 'personal';
         this.sitePassword = this.sitePasswordInput ? this.sitePasswordInput.value.trim() : '';
 
         localStorage.setItem('gemini_api_key', this.apiKey);
