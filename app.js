@@ -1195,6 +1195,7 @@ class WellnessApp {
         try {
             const url = `/api/models?p=${encodeURIComponent(password)}`;
             const response = await fetch(url);
+            const data = await response.json();
 
             if (response.ok) {
                 if (this.passwordStatus) {
@@ -1205,15 +1206,27 @@ class WellnessApp {
                 this.sitePassword = password;
                 localStorage.setItem('gemini_site_password', password);
                 this.showToast('Team Password verified and saved! 🛡️');
+            } else if (response.status === 401) {
+                if (this.passwordStatus) {
+                    this.passwordStatus.className = 'verify-status error';
+                    this.passwordStatus.innerHTML = '<span>❌</span> Incorrect password. Try again.';
+                }
+                this.showToast('Incorrect password.');
             } else {
-                throw new Error('Invalid Password');
+                // Server or API Key error (500)
+                const errorMsg = data.error?.message || 'Server Error';
+                if (this.passwordStatus) {
+                    this.passwordStatus.className = 'verify-status error';
+                    this.passwordStatus.innerHTML = `<span>⚠️</span> Server Error: ${errorMsg}`;
+                }
+                this.showToast(`Server Error: ${errorMsg}`, 6000);
             }
         } catch (error) {
             if (this.passwordStatus) {
                 this.passwordStatus.className = 'verify-status error';
-                this.passwordStatus.innerHTML = '<span>❌</span> Incorrect password. Try again.';
+                this.passwordStatus.innerHTML = '<span>❌</span> Connection failed. Try again.';
             }
-            this.showToast('Verification failed. Please check the password.', 5000);
+            this.showToast('Verification failed. Network error or server is down.', 5000);
         }
     }
 
