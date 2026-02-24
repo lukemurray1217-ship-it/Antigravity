@@ -22,10 +22,10 @@ export default async function handler(req, res) {
 
         const { contents, model, password } = req.body;
 
-        // Verify password if SITE_PASSWORD is set
-        const sitePassword = process.env.SITE_PASSWORD;
-        if (sitePassword && password !== sitePassword) {
-            return res.status(401).json({ error: { message: 'Incorrect Site Password. Please check your settings.' } });
+        // Verify password if ACCESS_PASSWORD is set
+        const accessPassword = process.env.ACCESS_PASSWORD;
+        if (accessPassword && password !== accessPassword) {
+            return res.status(401).json({ error: { message: 'Incorrect Access Password. Please check your settings.' } });
         }
 
         // Default to flash if not specified, but usually app.js sends it.

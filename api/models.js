@@ -20,11 +20,11 @@ export default async function handler(req, res) {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
 
-        // Verify password if SITE_PASSWORD is set
-        const sitePassword = process.env.SITE_PASSWORD;
+        // Verify password if ACCESS_PASSWORD is set
+        const accessPassword = process.env.ACCESS_PASSWORD;
         const incomingPassword = req.query.p;
-        if (sitePassword && incomingPassword !== sitePassword) {
-            return res.status(401).json({ error: { message: 'Incorrect Site Password.' } });
+        if (accessPassword && incomingPassword !== accessPassword) {
+            return res.status(401).json({ error: { message: 'Incorrect Access Password.' } });
         }
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
