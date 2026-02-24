@@ -152,6 +152,34 @@
                             </div>
                         </section>
 
+                        <!-- NEW: My Impact Section (Member Only) -->
+                        <section id="profile-my-impact" class="info-card hidden"
+                            style="margin-bottom: 2rem; border-top: 4px solid var(--accent-standing); background: linear-gradient(to bottom, rgba(var(--accent-standing-rgb), 0.05), transparent);">
+                            <h3 style="margin: 0 0 1.5rem 0;">🛡️ My Warrior Impact</h3>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                                <div class="impact-stat"
+                                    style="text-align: center; padding: 1.5rem; background: var(--surface-light); border-radius: var(--radius-md);">
+                                    <span class="hint"
+                                        style="display: block; margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Vitality
+                                        Contributed</span>
+                                    <h2 id="impact-points"
+                                        style="margin: 0; color: var(--accent-standing); font-size: 2.5rem;">0</h2>
+                                    <p class="hint" style="margin-top: 0.5rem; font-size: 0.8rem;">Points added to your
+                                        squad</p>
+                                </div>
+                                <div class="impact-stat"
+                                    style="text-align: center; padding: 1.5rem; background: var(--surface-light); border-radius: var(--radius-md);">
+                                    <span class="hint"
+                                        style="display: block; margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Squad
+                                        Standing</span>
+                                    <h2 id="impact-rank" style="margin: 0; color: var(--primary); font-size: 2.5rem;">
+                                        #--</h2>
+                                    <p class="hint" style="margin-top: 0.5rem; font-size: 0.8rem;">Rank within your team
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+
                         <h2 class="section-title">Exercise History</h2>
                         <div id="history-container" class="history-list">
                             <!-- History items will be injected here -->
@@ -231,8 +259,10 @@
                     <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
                     <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro (Latest)</option>
                     <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Exp)</option>
+                    <option value="gemini-pro">Gemini Pro (Legacy)</option>
                 </select>
             </div>
+
             <div class="setting-group">
                 <button id="check-models" class="secondary-btn" style="margin-bottom: 1rem; width: 100%;">
                     <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="margin-right: 8px;">
@@ -244,13 +274,28 @@
                 <div id="model-list-debug" class="hint"
                     style="max-height: 100px; overflow-y: auto; white-space: pre-wrap;"></div>
             </div>
+
             <div class="setting-group">
+                <label for="api-mode">API Access Source</label>
+                <select id="api-mode">
+                    <option value="personal">Personal API Key (Direct)</option>
+                    <option value="shared">Shared Access (Password Protected)</option>
+                </select>
+            </div>
+
+            <div id="shared-access-group" class="setting-group hidden">
+                <label for="site-password">Shared Access Password</label>
+                <input type="password" id="site-password" placeholder="Enter site-wide password">
+                <p class="hint" style="margin-top: 0.5rem;">Use the password provided by your organization.</p>
+            </div>
+
+            <div id="personal-key-group" class="setting-group">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                     <label for="api-key" style="margin: 0;">Warrior Bot API Key (Gemini)</label>
                     <a href="https://aistudio.google.com/app/apikey" target="_blank" class="hint-link"
                         style="color: var(--primary); font-size: 0.75rem;">Get Key ↗</a>
                 </div>
-                <input type="password" id="api-key" placeholder="Enter your API key">
+                <input type="password" id="api-key" placeholder="Enter your personal API key">
                 <p class="hint" style="margin-top: 0.5rem;">Stored locally in your browser.</p>
             </div>
             <div class="setting-group">
@@ -306,7 +351,9 @@
                 if (user) {
                     loggedInView.classList.remove('hidden');
                     loggedOutView.classList.add('hidden');
-                    greet.innerText = `Hi, ${user.email.split('@')[0]}!`;
+
+                    const title = user.role === 'leader' ? 'Leader' : 'Warrior';
+                    greet.innerText = `Hi, ${title} ${user.email.split('@')[0]}!`;
 
                     // Handle Weekly Recommendation
                     if (window.app && weeklyGoalArea) {
@@ -326,6 +373,24 @@
                     // Handle Newsletter Display on Profile
                     const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
                     const userData = users[user.email] || {};
+
+                    // Handle My Impact Section (Member Only)
+                    const impactSection = document.getElementById('profile-my-impact');
+                    if (impactSection) {
+                        if (user.role === 'member' && userData.groupCode) {
+                            impactSection.classList.remove('hidden');
+                            const impactPoints = document.getElementById('impact-points');
+                            const impactRank = document.getElementById('impact-rank');
+
+                            // Mock impact data based on history length and a random rank
+                            const points = history.length * 15; // 15 points per session
+                            if (impactPoints) impactPoints.innerText = points;
+                            if (impactRank) impactRank.innerText = '#' + (Math.floor(Math.random() * 5) + 1);
+                        } else {
+                            impactSection.classList.add('hidden');
+                        }
+                    }
+
                     if (userData.groupCode) {
                         const newsletter = JSON.parse(localStorage.getItem('newsletter_' + userData.groupCode));
                         if (newsletter) {

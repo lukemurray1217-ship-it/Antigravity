@@ -206,6 +206,7 @@
                         <option value="gemini-pro">Gemini Pro (Legacy)</option>
                     </select>
                 </div>
+
                 <div class="setting-group">
                     <button id="check-models" class="secondary-btn" style="margin-bottom: 1rem; width: 100%;">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="margin-right: 8px;">
@@ -217,14 +218,29 @@
                     <div id="model-list-debug" class="hint"
                         style="max-height: 100px; overflow-y: auto; white-space: pre-wrap;"></div>
                 </div>
+
                 <div class="setting-group">
+                    <label for="api-mode">API Access Source</label>
+                    <select id="api-mode">
+                        <option value="personal">Personal API Key (Direct)</option>
+                        <option value="shared">Shared Access (Password Protected)</option>
+                    </select>
+                </div>
+
+                <div id="shared-access-group" class="setting-group hidden">
+                    <label for="site-password">Shared Access Password</label>
+                    <input type="password" id="site-password" placeholder="Enter site-wide password">
+                    <p class="hint" style="margin-top: 0.5rem;">Use the password provided by your organization.</p>
+                </div>
+
+                <div id="personal-key-group" class="setting-group">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                         <label for="api-key" style="margin: 0;">Warrior Bot API Key (Gemini)</label>
                         <a href="https://aistudio.google.com/app/apikey" target="_blank" class="hint-link"
                             style="color: var(--primary); font-size: 0.75rem;">Get Key ↗</a>
                     </div>
-                    <input type="password" id="api-key" placeholder="Enter your API key">
+                    <input type="password" id="api-key" placeholder="Enter your personal API key">
                     <p class="hint" style="margin-top: 0.5rem;">Stored locally in your browser.</p>
                 </div>
                 <div class="setting-group">

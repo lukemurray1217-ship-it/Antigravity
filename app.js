@@ -32,6 +32,8 @@ CRITICAL:
 class WellnessApp {
     constructor() {
         this.apiKey = localStorage.getItem('gemini_api_key') || '';
+        this.apiMode = localStorage.getItem('gemini_api_mode') || 'personal';
+        this.sitePassword = localStorage.getItem('gemini_site_password') || '';
         this.model = localStorage.getItem('gemini_model') || 'gemini-1.5-flash';
         this.systemPrompt = localStorage.getItem('system_prompt') || DEFAULT_PROMPT;
 
@@ -55,6 +57,26 @@ class WellnessApp {
         // Auto-optimize model on load
         this.optimizeModelSelection();
         this.syncBottomNav();
+    }
+
+    smoothTransition(element, show) {
+        if (!element) return;
+        if (show) {
+            element.classList.remove('hidden');
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(10px)';
+            // Trigger reflow
+            element.offsetHeight;
+            element.style.transition = 'opacity 0.5s ease-out, transform 0.5s ease-out';
+            element.style.opacity = '1';
+            element.style.transform = 'translateY(0)';
+        } else {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                element.classList.add('hidden');
+            }, 500);
+        }
     }
 
     checkForInviteLink() {
@@ -122,6 +144,11 @@ class WellnessApp {
         this.loadingOverlay = document.getElementById('loading-overlay');
         this.checkModelsBtn = document.getElementById('check-models');
         this.modelDebug = document.getElementById('model-list-debug');
+
+        this.apiModeSelect = document.getElementById('api-mode');
+        this.sitePasswordInput = document.getElementById('site-password');
+        this.personalKeyGroup = document.getElementById('personal-key-group');
+        this.sharedAccessGroup = document.getElementById('shared-access-group');
 
         // Auth Elements
         this.loginNavBtn = document.getElementById('login-nav-btn');
@@ -226,6 +253,7 @@ class WellnessApp {
         // NEW: Enterprise Elements
         this.leaderboardBody = document.getElementById('leaderboard-body');
         this.corpIndex = document.getElementById('corporate-overview');
+        this.leaderImpactCard = document.getElementById('leader-impact-card');
     }
 
     initEventListeners() {
@@ -234,6 +262,9 @@ class WellnessApp {
         if (this.closeSettings) this.closeSettings.addEventListener('click', () => this.toggleSettings(false));
         if (this.saveSettingsBtn) this.saveSettingsBtn.addEventListener('click', () => this.saveSettings());
         if (this.checkModelsBtn) this.checkModelsBtn.addEventListener('click', () => this.fetchModels());
+        if (this.apiModeSelect) {
+            this.apiModeSelect.addEventListener('change', () => this.toggleApiModeUI());
+        }
 
         // Auth Listeners
         if (this.loginNavBtn) this.loginNavBtn.addEventListener('click', () => this.toggleAuthModal(true));
@@ -376,6 +407,15 @@ class WellnessApp {
             this.authRoleSelect.value = role;
         }
 
+        // Persona-specific titles
+        if (role === 'leader') {
+            this.authTitle.innerText = 'Become a Department Head';
+            this.authSubtitle.innerText = 'Launch your team\'s wellness journey and track group impact.';
+        } else {
+            this.authTitle.innerText = 'Join the Warrior Ranks';
+            this.authSubtitle.innerText = 'Start your personalized mobility protocols today.';
+        }
+
         this.toggleAuthModal(true);
     }
 
@@ -450,13 +490,19 @@ class WellnessApp {
         // Load history for this user
         this.history = JSON.parse(localStorage.getItem('warrior_history_' + this.currentUser.email)) || [];
 
-        // First Time vs Welcome Back Logic
+        // Persona-specific welcomes
         if (!users[email].hasLoggedInBefore) {
-            this.showToast('Welcome to the Warrior Team! 🚀', 5000);
+            const welcomeMsg = this.currentUser.role === 'leader'
+                ? 'Welcome, Commander! Your team is ready for leadership. 🛡️'
+                : 'Welcome, Warrior! Your mobility journey starts now. 🚀';
+            this.showToast(welcomeMsg, 6000);
             users[email].hasLoggedInBefore = true;
             localStorage.setItem('warrior_users', JSON.stringify(users));
         } else {
-            this.showToast(`Welcome back, ${email.split('@')[0]}!`, 4000);
+            const backMsg = this.currentUser.role === 'leader'
+                ? `Welcome back, Captain ${email.split('@')[0]}.`
+                : `Good to see you again, Warrior ${email.split('@')[0]}!`;
+            this.showToast(backMsg, 4000);
         }
 
         // Check for pending join code
@@ -547,74 +593,97 @@ class WellnessApp {
 
         if (this.currentUser) {
             this.loggedOutGroups.classList.add('hidden');
-            this.loggedInGroups.classList.remove('hidden');
+            this.smoothTransition(this.loggedInGroups, true);
 
             const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
             const userData = users[this.currentUser.email] || {};
-            this.currentUser.role = userData.role || 'member'; // Sync role and default to member
+            this.currentUser.role = userData.role || 'member';
 
-            if (userData.groupCode) {
-                if (this.joinGroupView) this.joinGroupView.classList.add('hidden');
-                if (this.leaderCreateView) this.leaderCreateView.classList.add('hidden');
-                if (this.groupDashboardView) this.groupDashboardView.classList.remove('hidden');
-                if (this.displayGroupCode) this.displayGroupCode.innerText = userData.groupCode;
-                if (this.displayGroupName) this.displayGroupName.innerText = userData.groupName || 'Warrior Team';
-
-                this.renderGroupMembers(userData.groupCode);
-                this.renderGroupPlan(userData.groupCode);
-
-                // Newsletter visibility
-                if (this.newsletterSection) {
-                    this.newsletterSection.classList.remove('hidden');
-                    if (this.currentUser.role === 'leader') {
-                        if (this.leaderNewsletterTools) this.leaderNewsletterTools.classList.remove('hidden');
-                    } else {
-                        if (this.leaderNewsletterTools) this.leaderNewsletterTools.classList.add('hidden');
-                    }
-
-                    const newsletter = JSON.parse(localStorage.getItem('newsletter_' + userData.groupCode));
-                    if (newsletter) {
-                        if (this.noNewsletterMsg) this.noNewsletterMsg.classList.add('hidden');
-                        if (this.latestNewsletterCard) this.latestNewsletterCard.classList.remove('hidden');
-                        if (this.newsletterTitle) this.newsletterTitle.innerText = newsletter.title;
-                        if (this.newsletterDate) this.newsletterDate.innerText = 'Sent ' + new Date(newsletter.timestamp).toLocaleDateString();
-                        if (this.viewNewsletterBtn) this.viewNewsletterBtn.classList.remove('hidden');
-
-                        // Newsletter Notification Logic
-                        const lastSeen = localStorage.getItem('warrior_last_newsletter_' + userData.groupCode);
-                        if (newsletter.timestamp !== lastSeen) {
-                            // Delay slightly so it doesn't overlap with welcome toast
-                            setTimeout(() => {
-                                this.showToast('📧 New Weekly Report available!', 5000);
-                            }, 2000);
-                            localStorage.setItem('warrior_last_newsletter_' + userData.groupCode, newsletter.timestamp);
-                        }
-                    } else {
-                        if (this.noNewsletterMsg) this.noNewsletterMsg.classList.remove('hidden');
-                        if (this.latestNewsletterCard) this.latestNewsletterCard.classList.add('hidden');
-                        if (this.viewNewsletterBtn) this.viewNewsletterBtn.classList.add('hidden');
-                    }
-                }
-            } else {
-                if (this.groupDashboardView) this.groupDashboardView.classList.add('hidden');
-                if (this.currentUser.role === 'leader') {
-                    if (this.joinGroupView) this.joinGroupView.classList.add('hidden');
-                    if (this.leaderCreateView) this.leaderCreateView.classList.remove('hidden');
-                } else {
-                    if (this.joinGroupView) this.joinGroupView.classList.remove('hidden');
-                    if (this.leaderCreateView) this.leaderCreateView.classList.add('hidden');
-                }
-            }
             if (this.currentUser.role === 'leader') {
-                if (this.leaderToolbar) this.leaderToolbar.classList.remove('hidden');
+                this.renderLeaderDashboard(userData);
             } else {
-                if (this.leaderToolbar) this.leaderToolbar.classList.add('hidden');
+                this.renderWarriorDashboard(userData);
             }
+
             this.renderHomeStrategy();
         } else {
             this.loggedOutGroups.classList.remove('hidden');
             this.loggedInGroups.classList.add('hidden');
             if (this.leaderToolbar) this.leaderToolbar.classList.add('hidden');
+        }
+    }
+
+    renderWarriorDashboard(userData) {
+        if (userData.groupCode) {
+            if (this.joinGroupView) this.joinGroupView.classList.add('hidden');
+            if (this.leaderCreateView) this.leaderCreateView.classList.add('hidden');
+            if (this.groupDashboardView) this.groupDashboardView.classList.remove('hidden');
+            if (this.displayGroupCode) this.displayGroupCode.innerText = userData.groupCode;
+            if (this.displayGroupName) this.displayGroupName.innerText = userData.groupName || 'Warrior Team';
+
+            this.renderGroupMembers(userData.groupCode);
+            this.renderGroupPlan(userData.groupCode);
+            this.renderNewsletterSection(userData.groupCode, 'member');
+        } else {
+            if (this.groupDashboardView) this.groupDashboardView.classList.add('hidden');
+            if (this.leaderCreateView) this.leaderCreateView.classList.add('hidden');
+            this.smoothTransition(this.joinGroupView, true);
+        }
+
+        if (this.leaderToolbar) this.leaderToolbar.classList.add('hidden');
+        if (this.leaderImpactCard) this.leaderImpactCard.classList.add('hidden');
+    }
+
+    renderLeaderDashboard(userData) {
+        if (userData.groupCode) {
+            if (this.joinGroupView) this.joinGroupView.classList.add('hidden');
+            if (this.leaderCreateView) this.leaderCreateView.classList.add('hidden');
+            if (this.groupDashboardView) this.groupDashboardView.classList.remove('hidden');
+            if (this.displayGroupCode) this.displayGroupCode.innerText = userData.groupCode;
+            if (this.displayGroupName) this.displayGroupName.innerText = userData.groupName || 'Warrior Team';
+
+            this.renderGroupMembers(userData.groupCode);
+            this.renderGroupPlan(userData.groupCode);
+            this.renderNewsletterSection(userData.groupCode, 'leader');
+
+            if (this.leaderToolbar) this.leaderToolbar.classList.remove('hidden');
+            if (this.leaderImpactCard) this.leaderImpactCard.classList.remove('hidden');
+        } else {
+            if (this.groupDashboardView) this.groupDashboardView.classList.add('hidden');
+            if (this.joinGroupView) this.joinGroupView.classList.add('hidden');
+            this.smoothTransition(this.leaderCreateView, true);
+        }
+    }
+
+    renderNewsletterSection(groupCode, role) {
+        if (!this.newsletterSection) return;
+        this.newsletterSection.classList.remove('hidden');
+
+        if (role === 'leader') {
+            if (this.leaderNewsletterTools) this.leaderNewsletterTools.classList.remove('hidden');
+        } else {
+            if (this.leaderNewsletterTools) this.leaderNewsletterTools.classList.add('hidden');
+        }
+
+        const newsletter = JSON.parse(localStorage.getItem('newsletter_' + groupCode));
+        if (newsletter) {
+            if (this.noNewsletterMsg) this.noNewsletterMsg.classList.add('hidden');
+            if (this.latestNewsletterCard) this.latestNewsletterCard.classList.remove('hidden');
+            if (this.newsletterTitle) this.newsletterTitle.innerText = newsletter.title;
+            if (this.newsletterDate) this.newsletterDate.innerText = 'Sent ' + new Date(newsletter.timestamp).toLocaleDateString();
+            if (this.viewNewsletterBtn) this.viewNewsletterBtn.classList.remove('hidden');
+
+            const lastSeen = localStorage.getItem('warrior_last_newsletter_' + groupCode);
+            if (newsletter.timestamp !== lastSeen) {
+                setTimeout(() => {
+                    this.showToast('📧 New Weekly Report available!', 5000);
+                }, 2000);
+                localStorage.setItem('warrior_last_newsletter_' + groupCode, newsletter.timestamp);
+            }
+        } else {
+            if (this.noNewsletterMsg) this.noNewsletterMsg.classList.remove('hidden');
+            if (this.latestNewsletterCard) this.latestNewsletterCard.classList.add('hidden');
+            if (this.viewNewsletterBtn) this.viewNewsletterBtn.classList.add('hidden');
         }
     }
 
@@ -644,14 +713,29 @@ class WellnessApp {
         users[this.currentUser.email].groupCode = code;
         localStorage.setItem('warrior_users', JSON.stringify(users));
 
+        if (this.currentUser.role === 'member') {
+            this.showToast('Welcome to the Squad! Check your Profile to track your impact.', 6000);
+        } else {
+            this.showToast(`Joined group: ${code}`, 4000);
+        }
+
         this.initGroups();
     }
 
     handleLeaveGroup() {
+        const confirmMsg = this.currentUser.role === 'leader'
+            ? '⚠️ WARNING: You are the Department Head. Leaving will not delete the group, but you will lose access to team management tools. Are you sure?'
+            : 'Are you sure you want to leave your squad? This will reset your group progress views and impact tracking for this team.';
+
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+
         const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
         delete users[this.currentUser.email].groupCode;
         localStorage.setItem('warrior_users', JSON.stringify(users));
 
+        this.showToast('You have left the squad. Stay mobile, Warrior! 🛡️');
         this.initGroups();
     }
 
@@ -1062,6 +1146,21 @@ class WellnessApp {
         if (this.apiKeyInput) this.apiKeyInput.value = this.apiKey;
         if (this.modelInput) this.modelInput.value = this.model;
         if (this.systemPromptInput) this.systemPromptInput.value = this.systemPrompt;
+        if (this.apiModeSelect) this.apiModeSelect.value = this.apiMode;
+        if (this.sitePasswordInput) this.sitePasswordInput.value = this.sitePassword;
+        this.toggleApiModeUI();
+    }
+
+    toggleApiModeUI() {
+        if (!this.apiModeSelect) return;
+        const mode = this.apiModeSelect.value;
+        if (mode === 'shared') {
+            if (this.sharedAccessGroup) this.sharedAccessGroup.classList.remove('hidden');
+            if (this.personalKeyGroup) this.personalKeyGroup.classList.add('hidden');
+        } else {
+            if (this.sharedAccessGroup) this.sharedAccessGroup.classList.add('hidden');
+            if (this.personalKeyGroup) this.personalKeyGroup.classList.remove('hidden');
+        }
     }
 
     toggleSettings(show) {
@@ -1076,10 +1175,14 @@ class WellnessApp {
         this.apiKey = this.apiKeyInput.value.trim();
         this.model = this.modelInput.value;
         this.systemPrompt = this.systemPromptInput.value.trim();
+        this.apiMode = this.apiModeSelect ? this.apiModeSelect.value : 'personal';
+        this.sitePassword = this.sitePasswordInput ? this.sitePasswordInput.value.trim() : '';
 
         localStorage.setItem('gemini_api_key', this.apiKey);
         localStorage.setItem('gemini_model', this.model);
         localStorage.setItem('system_prompt', this.systemPrompt);
+        localStorage.setItem('gemini_api_mode', this.apiMode);
+        localStorage.setItem('gemini_site_password', this.sitePassword);
 
         this.showToast('Configuration saved! ✅');
         this.toggleSettings(false);
@@ -1171,10 +1274,9 @@ class WellnessApp {
         try {
             let response;
 
-            if (hasUserKey) {
+            if (this.apiMode === 'personal' && this.apiKey) {
                 // Client-side call with User Key
-                const usedKey = apiKey || this.apiKey;
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${usedKey}`;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
 
                 response = await fetch(url, {
                     method: 'POST',
@@ -1194,12 +1296,13 @@ class WellnessApp {
                     })
                 });
             } else {
-                // Server-side call via Vercel Proxy (No key exposure)
+                // Server-side call via Vercel Proxy (shared mode or fallback)
                 response = await fetch('/api/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         model: this.model,
+                        password: this.sitePassword,
                         contents: [{
                             parts: [{
                                 text: `${this.systemPrompt}\n\nUser Input: "${feeling}"`
@@ -1253,11 +1356,11 @@ class WellnessApp {
     async getAvailableModels() {
         // Helper to get models either directly or via Proxy
         let url;
-        if (this.apiKey) {
+        if (this.apiMode === 'personal' && this.apiKey) {
             url = `https://generativelanguage.googleapis.com/v1beta/models?key=${this.apiKey}`;
         } else {
             // Proxy Mode
-            url = '/api/models';
+            url = `/api/models?p=${encodeURIComponent(this.sitePassword)}`;
         }
 
         try {

@@ -20,15 +20,15 @@ export default async function handler(req, res) {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
 
-        if (!apiKey) {
-            console.error('Server Error: Missing GEMINI_API_KEY environment variable.');
-            return res.status(500).json({ error: { message: 'Server Configuration Error: API Key missing.' } });
+        const { contents, model, password } = req.body;
+
+        // Verify password if SITE_PASSWORD is set
+        const sitePassword = process.env.SITE_PASSWORD;
+        if (sitePassword && password !== sitePassword) {
+            return res.status(401).json({ error: { message: 'Incorrect Site Password. Please check your settings.' } });
         }
 
-        const { contents, model } = req.body;
-
         // Default to flash if not specified, but usually app.js sends it.
-        // We FORCE flash here if we want to be extra safe for the site-wide key.
         const targetModel = model || 'gemini-1.5-flash';
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${apiKey}`;

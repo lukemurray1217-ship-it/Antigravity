@@ -20,9 +20,11 @@ export default async function handler(req, res) {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
 
-        if (!apiKey) {
-            console.error('Server Error: Missing GEMINI_API_KEY environment variable.');
-            return res.status(500).json({ error: { message: 'Server Configuration Error: API Key missing.' } });
+        // Verify password if SITE_PASSWORD is set
+        const sitePassword = process.env.SITE_PASSWORD;
+        const incomingPassword = req.query.p;
+        if (sitePassword && incomingPassword !== sitePassword) {
+            return res.status(401).json({ error: { message: 'Incorrect Site Password.' } });
         }
 
         const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
