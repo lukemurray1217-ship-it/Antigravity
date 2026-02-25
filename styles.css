@@ -899,13 +899,16 @@ header.scrolled .logo {
     position: relative;
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
     margin-bottom: 2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-attachment: fixed;
-    /* Parallax Effect */
+    min-height: 80vh;
+    /* Ensure it takes up space even on large screens */
+    background-attachment: scroll;
+    /* More robust than fixed for full-screen */
 }
 
 /* Mobile specific hero override */
@@ -924,7 +927,7 @@ header.scrolled .logo {
 
 /* Page Specific Heros - Lighter & Refined */
 .hero-home {
-    background-image: linear-gradient(rgba(8, 9, 10, 0.35), var(--bg)), url('assets/images/heroes/hero-home-v3.png');
+    background-image: linear-gradient(rgba(8, 9, 10, 0.35), var(--bg)), url('assets/images/heroes/hero-home-v4.png');
 }
 
 .hero-sitting {
@@ -1062,6 +1065,87 @@ textarea {
     font-size: clamp(2.5rem, 5vw, 3.5rem);
     margin-bottom: 4rem;
     text-align: center;
+}
+
+/* Search & Filter Container */
+.search-filter-container {
+    max-width: var(--container-max);
+    margin: -3rem auto 3rem;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.search-wrapper {
+    width: 100%;
+    max-width: 600px;
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    pointer-events: none;
+}
+
+#exercise-search {
+    width: 100%;
+    padding: 1.25rem 1.25rem 1.25rem 3.5rem;
+    background: rgba(15, 18, 20, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius-md);
+    color: var(--text);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-soft);
+}
+
+#exercise-search:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(15, 18, 20, 0.95);
+    box-shadow: var(--shadow-glow);
+}
+
+.filter-chips {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.filter-chip {
+    padding: 0.6rem 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-bright);
+    border-radius: 100px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.filter-chip:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.filter-chip.active {
+    background: var(--primary);
+    color: #050607;
+    border-color: var(--primary);
+    box-shadow: 0 8px 20px rgba(168, 195, 181, 0.4);
 }
 
 /* Reimagined Exercise Cards */
@@ -3119,6 +3203,11 @@ textarea:focus {
     transform: translateY(30px);
     transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
     will-change: opacity, transform;
+}
+
+.reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* =========================================
