@@ -4,7 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Groups | Work Warrior</title>
+    <title>Warrior Squads | Collective Workspace Wellness</title>
+    <meta name="description"
+        content="Join or lead a Warrior Squad. Sync your movement protocols and climb the organization vitality leaderboard together.">
+    <meta name="keywords" content="team wellness, group stretching, corporate health, office synergy">
     <link rel="stylesheet" href="styles.css">
     <link
         href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@700&family=Inter:wght@400;500;700&family=Outfit:wght@800&display=swap"
@@ -336,11 +339,21 @@
                         <div id="leader-create-view" class="info-card hidden" style="text-align: center;">
                             <h3>Create Your Warrior Group</h3>
                             <p>Give your team a name to get started.</p>
-                            <div class="input-group"
-                                style="margin-top: 1.5rem; display: flex; gap: 0.5rem; justify-content: center;">
+                            <div
+                                style="display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 400px; margin: 1.5rem auto 0;">
                                 <input type="text" id="create-group-name" placeholder="e.g., Marketing Team"
-                                    style="width: 250px;">
-                                <button id="create-group-btn" class="primary-btn">Create Group</button>
+                                    style="width: 100%;">
+                                <div
+                                    style="display: flex; gap: 0.5rem; align-items: center; background: var(--surface-light); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-bright);">
+                                    <span style="color: var(--primary); font-weight: 700;">#</span>
+                                    <input type="text" id="create-group-community"
+                                        placeholder="company-name (e.g. jpmorgan)"
+                                        style="flex: 1; border: none; background: transparent; padding: 0.5rem 0; font-weight: 600;">
+                                </div>
+                                <p class="hint" style="font-size: 0.75rem; margin: 0; text-align: left;">Joining a
+                                    community connects your group to a larger organization leaderboard.</p>
+                                <button id="create-group-btn" class="primary-btn"
+                                    style="width: 100%; justify-content: center;">Create Group</button>
                             </div>
                         </div>
 

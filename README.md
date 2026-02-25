@@ -28,6 +28,8 @@ The app requires a **Google Gemini API Key**.
 
 ## 🛠 Features
 - **AI-Powered Recommendations**: Personalized suggestions based on how you feel.
+- **Vitality Tracking**: Gamified health scoring and leveling system (`Scout` → `Elite Warrior`).
+- **Collective Wellness**: Warrior Squads with shared mobility protocols and department leaderboards.
 - **Privacy First**: Sensitive keys are stored in `localStorage`, never on the server.
 - **Fast & Lightweight**: Zero dependencies, pure HTML/CSS/JS.
 

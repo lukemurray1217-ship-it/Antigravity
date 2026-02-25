@@ -202,6 +202,7 @@ class WellnessApp {
         this.groupsLoginTrigger = document.getElementById('groups-login-trigger');
         this.leaderCreateView = document.getElementById('leader-create-view');
         this.createGroupNameInput = document.getElementById('create-group-name');
+        this.createGroupCommunityInput = document.getElementById('create-group-community');
         this.createGroupBtn = document.getElementById('create-group-btn');
 
         // Bottom Auth Elements
@@ -788,6 +789,8 @@ class WellnessApp {
 
     handleCreateGroup() {
         const groupName = this.createGroupNameInput.value.trim();
+        const community = this.createGroupCommunityInput ? this.createGroupCommunityInput.value.trim() : '';
+
         if (!groupName) {
             this.showToast('Please enter a group name.');
             return;
@@ -798,9 +801,22 @@ class WellnessApp {
         const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
         users[this.currentUser.email].groupCode = code;
         users[this.currentUser.email].groupName = groupName;
+        users[this.currentUser.email].community = community;
         localStorage.setItem('warrior_users', JSON.stringify(users));
 
-        this.showToast(`Group "${groupName}" created! Code: ${code}`, 5000);
+        // Register group in global tracker
+        const groups = JSON.parse(localStorage.getItem('warrior_groups')) || {};
+        groups[code] = {
+            code: code,
+            name: groupName,
+            score: 0,
+            members: 1,
+            community: community,
+            lastUpdate: new Date().getTime()
+        };
+        localStorage.setItem('warrior_groups', JSON.stringify(groups));
+
+        this.showToast(`Group "${groupName}" created! ${community ? 'Community: #' + community : ''}`, 5000);
         this.initGroups();
     }
 
@@ -809,11 +825,25 @@ class WellnessApp {
         if (!code) return;
 
         const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
+        const groups = JSON.parse(localStorage.getItem('warrior_groups')) || {};
+
         users[this.currentUser.email].groupCode = code;
+
+        // Inherit community and name from existing group if found
+        if (groups[code]) {
+            users[this.currentUser.email].groupName = groups[code].name;
+            users[this.currentUser.email].community = groups[code].community;
+            groups[code].members = (groups[code].members || 0) + 1;
+            localStorage.setItem('warrior_groups', JSON.stringify(groups));
+        }
+
         localStorage.setItem('warrior_users', JSON.stringify(users));
 
         if (this.currentUser.role === 'member') {
-            this.showToast('Welcome to the Squad! Check your Profile to track your impact.', 6000);
+            const welcomeMsg = groups[code]?.community
+                ? `Joined the #${groups[code].community} community!`
+                : 'Welcome to the Squad!';
+            this.showToast(welcomeMsg, 6000);
         } else {
             this.showToast(`Joined group: ${code}`, 4000);
         }
@@ -1809,8 +1839,52 @@ class WellnessApp {
             window.updateProfileView(this.currentUser, this.history);
         }
 
+        // Update group-level score if user is in a group
+        const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
+        const userData = users[this.currentUser.email] || {};
+        if (userData.groupCode) {
+            this.updateGroupScore(userData.groupCode, type === 'group_stretch' ? 100 : 20);
+        }
+
         // Update any vitality score displays if they exist
         this.updateVitalityDisplays();
+    }
+
+    updateGroupScore(groupCode, points) {
+        const groups = JSON.parse(localStorage.getItem('warrior_groups')) || {};
+        if (!groups[groupCode]) {
+            // If group doesn't exist in tracker, initialize it
+            const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
+            let groupName = 'Warrior Team';
+            let community = '';
+
+            // Try to find the group name and community from the leader or own data
+            for (const email in users) {
+                if (users[email].groupCode === groupCode) {
+                    groupName = users[email].groupName || groupName;
+                    community = users[email].community || '';
+                    break;
+                }
+            }
+
+            groups[groupCode] = {
+                code: groupCode,
+                name: groupName,
+                score: 0,
+                members: 1,
+                community: community,
+                lastUpdate: new Date().getTime()
+            };
+        }
+
+        groups[groupCode].score += points;
+        groups[groupCode].lastUpdate = new Date().getTime();
+        localStorage.setItem('warrior_groups', JSON.stringify(groups));
+
+        // Refresh leaderboard if visible
+        if (window.location.pathname.endsWith('groups.html')) {
+            this.renderLeaderboard();
+        }
     }
 
     updateVitalityDisplays() {
@@ -2078,31 +2152,56 @@ class WellnessApp {
     renderLeaderboard() {
         if (!this.leaderboardBody) return;
 
-        // Mock Organizational Data – in a real app this would come from a backend
-        // We calculate "Vitality Score" based on consistency and participation
-        const departments = [
-            { name: "Investment Banking", score: 98.4, participation: 92, trend: "+1.2%", status: "up" },
-            { name: "Asset Management", score: 95.1, participation: 88, trend: "+0.4%", status: "up" },
-            { name: "Corporate Banking", score: 92.8, participation: 84, trend: "-0.2%", status: "down" },
-            { name: "Technology & Operations", score: 91.5, participation: 81, trend: "+0.8%", status: "up" },
-            { name: "Wealth Management", score: 89.2, participation: 79, trend: "+1.5%", status: "up" }
-        ];
+        const groups = JSON.parse(localStorage.getItem('warrior_groups')) || {};
+        const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
+        const currentUserData = this.currentUser ? (users[this.currentUser.email] || {}) : {};
+        const userCommunity = currentUserData.community || '';
 
-        this.leaderboardBody.innerHTML = departments.map((dept, index) => `
-            <tr style="border-bottom: 1px solid var(--border-bright);">
-                <td style="padding: 1rem;"><span class="rank-badge rank-${index + 1}">${index + 1}</span></td>
-                <td style="padding: 1rem; font-weight: 600;">${dept.name}</td>
-                <td style="padding: 1rem; font-family: monospace; font-weight: 700;">${dept.score}</td>
-                <td style="padding: 1rem;">
-                    <div style="width: 100px; height: 6px; background: var(--surface-light); border-radius: 3px; overflow: hidden;">
-                        <div style="width: ${dept.participation}%; height: 100%; background: var(--primary);"></div>
-                    </div>
-                </td>
-                <td style="padding: 1rem; color: ${dept.status === 'up' ? 'var(--accent-standing)' : 'var(--accent-eye)'};">
-                    ${dept.status === 'up' ? '▲' : '▼'} ${dept.trend.replace('+', '').replace('-', '')}
-                </td>
-            </tr>
-        `).join('');
+        // Convert groups object to array and apply filtering/sorting
+        let groupList = Object.values(groups);
+
+        // If user is in a community, filter to show only that community (or all if user chooses)
+        // For now, let's show the "Community Leaderboard" if they have a tag
+        if (userCommunity) {
+            groupList = groupList.filter(g => g.community === userCommunity);
+            // Add some "filler" departments if the community is small to make it look live
+            if (groupList.length < 3) {
+                groupList.push(
+                    { name: "Executive Suite", score: 850, members: 12, trend: "+0.5%", status: "up", community: userCommunity },
+                    { name: "Global Ops", score: 720, members: 45, trend: "+1.2%", status: "up", community: userCommunity }
+                );
+            }
+            // Update title if it exists
+            const lbTitle = document.querySelector('#org-leaderboard h3');
+            if (lbTitle) lbTitle.innerText = `${userCommunity} Community Leaderboard`;
+        }
+
+        // Default sort by score descending
+        groupList.sort((a, b) => b.score - a.score);
+
+        // Map to HTML
+        this.leaderboardBody.innerHTML = groupList.map((dept, index) => {
+            const score = dept.score || 0;
+            const participation = Math.min(100, Math.floor((score / 1000) * 100)) || 85;
+            const trend = dept.trend || "+0.8%";
+            const status = dept.status || "up";
+
+            return `
+                <tr style="border-bottom: 1px solid var(--border-bright);">
+                    <td style="padding: 1rem;"><span class="rank-badge rank-${index + 1}">${index + 1}</span></td>
+                    <td style="padding: 1rem; font-weight: 600;">${dept.name || dept.code}</td>
+                    <td style="padding: 1rem; font-family: monospace; font-weight: 700;">${score.toLocaleString()}</td>
+                    <td style="padding: 1rem;">
+                        <div style="width: 100px; height: 6px; background: var(--surface-light); border-radius: 3px; overflow: hidden;">
+                            <div style="width: ${participation}%; height: 100%; background: var(--primary);"></div>
+                        </div>
+                    </td>
+                    <td style="padding: 1rem; color: ${status === 'up' ? 'var(--accent-standing)' : 'var(--accent-eye)'};">
+                        ${status === 'up' ? '▲' : '▼'} ${trend.replace('+', '').replace('-', '')}
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     /* --- ONBOARDING LOGIC --- */
