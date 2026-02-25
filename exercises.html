@@ -382,6 +382,9 @@
                         <h3>${ex.title}</h3>
                         <span class="section-benefit">${ex.benefit}</span>
                         <p class="section-description">${ex.description}</p>
+                        <button class="primary-btn complete-exercise-btn" onclick="window.app.logActivity('${ex.title}', 'exercise_click')" style="margin-top: 2rem; width: auto; padding: 0.75rem 2rem;">
+                            Log Completion (+10 Vitality)
+                        </button>
                     </div>
                     <div class="workout-visual-container">
                         <h4><span class="pulse-dot"></span> Guided Protocol</h4>

@@ -74,6 +74,11 @@
                             </div>
                             <input type="password" id="auth-password" placeholder="••••••••" required>
                         </div>
+                        <div id="header-vitality" class="vitality-badge hidden"
+                            style="margin-left: 1rem; cursor: pointer;" onclick="location.href='profile.html'">
+                            🛡️ <span class="vitality-score-value">0</span> <span class="vitality-level-name"
+                                style="margin-left: 0.5rem; font-size: 0.7rem; font-weight: 700; opacity: 0.8;">Recruit</span>
+                        </div>
                         <div class="setting-group hidden" id="auth-role-group">
                             <label>I am a...</label>
                             <select id="auth-role">
@@ -156,26 +161,28 @@
                         <section id="profile-my-impact" class="info-card hidden"
                             style="margin-bottom: 2rem; border-top: 4px solid var(--accent-standing); background: linear-gradient(to bottom, rgba(var(--accent-standing-rgb), 0.05), transparent);">
                             <h3 style="margin: 0 0 1.5rem 0;">🛡️ My Warrior Impact</h3>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                                <div class="impact-stat"
-                                    style="text-align: center; padding: 1.5rem; background: var(--surface-light); border-radius: var(--radius-md);">
-                                    <span class="hint"
-                                        style="display: block; margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Vitality
-                                        Contributed</span>
-                                    <h2 id="impact-points"
-                                        style="margin: 0; color: var(--accent-standing); font-size: 2.5rem;">0</h2>
-                                    <p class="hint" style="margin-top: 0.5rem; font-size: 0.8rem;">Points added to your
-                                        squad</p>
+                            <div class="impact-grid">
+                                <div class="impact-stat-card">
+                                    <div class="impact-stat-label">Vitality Score</div>
+                                    <h2 id="vitality-score" class="impact-stat-value"
+                                        style="color: var(--accent-standing);">0</h2>
+                                    <div class="vitality-badge">
+                                        🛡️ <span class="vitality-level-name">Member</span>
+                                    </div>
                                 </div>
-                                <div class="impact-stat"
-                                    style="text-align: center; padding: 1.5rem; background: var(--surface-light); border-radius: var(--radius-md);">
-                                    <span class="hint"
-                                        style="display: block; margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Squad
-                                        Standing</span>
-                                    <h2 id="impact-rank" style="margin: 0; color: var(--primary); font-size: 2.5rem;">
-                                        #--</h2>
-                                    <p class="hint" style="margin-top: 0.5rem; font-size: 0.8rem;">Rank within your team
-                                    </p>
+                                <div class="impact-stat-card">
+                                    <div class="impact-stat-label">Daily Streak</div>
+                                    <h2 id="streak-count" class="impact-stat-value" style="color: var(--accent-eye);">0
+                                    </h2>
+                                    <div class="streak-counter" style="justify-content: center; font-size: 0.85rem;">
+                                        <span>🔥 Active</span>
+                                    </div>
+                                </div>
+                                <div class="impact-stat-card">
+                                    <div class="impact-stat-label">Team Rank</div>
+                                    <h2 id="impact-rank" class="impact-stat-value" style="color: var(--primary);">#--
+                                    </h2>
+                                    <div class="hint" style="font-size: 0.75rem;">Top 10% this week</div>
                                 </div>
                             </div>
                         </section>
@@ -392,12 +399,12 @@
                     if (impactSection) {
                         if (user.role === 'member' && userData.groupCode) {
                             impactSection.classList.remove('hidden');
-                            const impactPoints = document.getElementById('impact-points');
+                            const vitalityEl = document.getElementById('vitality-score');
+                            const streakEl = document.getElementById('streak-count');
                             const impactRank = document.getElementById('impact-rank');
 
-                            // Mock impact data based on history length and a random rank
-                            const points = history.length * 15; // 15 points per session
-                            if (impactPoints) impactPoints.innerText = points;
+                            if (vitalityEl) vitalityEl.innerText = window.app.calculateVitalityScore();
+                            if (streakEl) streakEl.innerText = window.app.getStreakCount();
                             if (impactRank) impactRank.innerText = '#' + (Math.floor(Math.random() * 5) + 1);
                         } else {
                             impactSection.classList.add('hidden');

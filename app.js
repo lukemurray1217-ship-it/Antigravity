@@ -266,6 +266,10 @@ class WellnessApp {
         this.onboardingBanner = document.getElementById('onboarding-banner');
         this.onboardingClose = document.getElementById('onboarding-close');
         this.onboardingAction = document.getElementById('onboarding-action');
+
+        // NEW: Homepage Quick Access
+        this.heroQuickWorkout = document.getElementById('hero-quick-workout');
+        this.dailyStretchesBox = document.getElementById('daily-stretches-access-point');
     }
 
     initEventListeners() {
@@ -598,6 +602,14 @@ class WellnessApp {
             this.userInfo.classList.remove('hidden');
             this.userDisplay.innerText = this.currentUser.email.split('@')[0];
             if (this.bottomAuthSection) this.bottomAuthSection.classList.add('hidden');
+            if (this.heroQuickWorkout) this.heroQuickWorkout.classList.remove('hidden');
+
+            // Show vitality in header
+            const headerVitality = document.getElementById('header-vitality');
+            if (headerVitality) {
+                headerVitality.classList.remove('hidden');
+                this.updateVitalityDisplays();
+            }
 
             // Comprehensive UI cleanup for all pages
             document.querySelectorAll('.bottom-auth-section').forEach(el => el.classList.add('hidden'));
@@ -610,6 +622,10 @@ class WellnessApp {
             this.loginNavBtn.classList.remove('hidden');
             this.userInfo.classList.add('hidden');
             if (this.bottomAuthSection) this.bottomAuthSection.classList.remove('hidden');
+            if (this.heroQuickWorkout) this.heroQuickWorkout.classList.add('hidden');
+
+            const headerVitality = document.getElementById('header-vitality');
+            if (headerVitality) headerVitality.classList.add('hidden');
 
             // Show triggers if logged out
             document.querySelectorAll('.bottom-auth-section').forEach(el => el.classList.remove('hidden'));
@@ -635,11 +651,65 @@ class WellnessApp {
             }
 
             this.renderHomeStrategy();
+            this.renderDailyStretchesBox();
         } else {
             this.loggedOutGroups.classList.remove('hidden');
             this.loggedInGroups.classList.add('hidden');
             if (this.leaderToolbar) this.leaderToolbar.classList.add('hidden');
         }
+    }
+
+    renderDailyStretchesBox() {
+        if (!this.dailyStretchesBox || !this.currentUser) {
+            if (this.dailyStretchesBox) this.dailyStretchesBox.classList.add('hidden');
+            return;
+        }
+
+        const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
+        const userData = users[this.currentUser.email] || {};
+
+        if (!userData.groupCode) {
+            this.dailyStretchesBox.classList.add('hidden');
+            return;
+        }
+
+        const plan = this.getGroupWeeklyPlan(userData.groupCode);
+        const todayNum = new Date().getDay();
+        const targetIdx = Math.max(0, Math.min(4, todayNum - 1));
+        const todayPlan = plan[targetIdx];
+        const ex = todayPlan.exercise;
+
+        this.dailyStretchesBox.classList.remove('hidden');
+        this.dailyStretchesBox.innerHTML = `
+            <div class="daily-stretches-card glass reveal visible">
+                <div class="daily-stretches-premium-badge">TEAM ASSIGNED</div>
+                <div class="daily-stretches-content">
+                    <div class="daily-stretches-icon">${ex.icon}</div>
+                    <div class="daily-stretches-info">
+                        <h3>Today's Assigned Stretch</h3>
+                        <p>${ex.title}: ${ex.benefit}</p>
+                        <div class="daily-stretches-meta">
+                            <span class="vitality-gain-hint">+75 Vitality Pts</span>
+                            <span class="participation-count">🔥 12 team members active</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="primary-btn premium-glow-btn" id="start-group-stretch-btn">
+                    Start Group Stretch
+                    <span class="btn-shine"></span>
+                </button>
+            </div>
+        `;
+
+        document.getElementById('start-group-stretch-btn')?.addEventListener('click', () => {
+            this.handleStartGroupStretch(ex);
+        });
+    }
+
+    handleStartGroupStretch(exercise) {
+        this.logActivity(`Group Stretch: ${exercise.title}`, 'group_stretch');
+        // Redirect to exercise or show instructions
+        location.href = `exercises.html#${exercise.id}`;
     }
 
     renderWarriorDashboard(userData) {
@@ -1701,17 +1771,146 @@ class WellnessApp {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    saveToHistory(message, exercises) {
+    saveToHistory(message, exercises, type = 'gemini_protocol') {
         if (!this.currentUser) return;
 
         const historyItem = {
             timestamp: new Date().getTime(),
             message: message,
+            type: type,
             exercises: exercises.map(ex => ({ id: ex.id, title: ex.title, icon: ex.icon })) // Store ID for linking
         };
 
         this.history.push(historyItem);
         localStorage.setItem('warrior_history_' + this.currentUser.email, JSON.stringify(this.history));
+
+        // Refresh UI if needed
+        if (window.location.pathname.endsWith('profile.html')) {
+            window.updateProfileView(this.currentUser, this.history);
+        }
+    }
+
+    logActivity(title, type = 'activity') {
+        if (!this.currentUser) return;
+
+        const historyItem = {
+            timestamp: new Date().getTime(),
+            message: `Completed: ${title}`,
+            type: type,
+            exercises: [] // No specific exercises for generalized activity
+        };
+
+        this.history.push(historyItem);
+        localStorage.setItem('warrior_history_' + this.currentUser.email, JSON.stringify(this.history));
+
+        this.showToast(`Activity logged: ${title}! 📈`);
+
+        if (window.location.pathname.endsWith('profile.html') && window.updateProfileView) {
+            window.updateProfileView(this.currentUser, this.history);
+        }
+
+        // Update any vitality score displays if they exist
+        this.updateVitalityDisplays();
+    }
+
+    updateVitalityDisplays() {
+        const { score, level } = this.calculateVitalityScore();
+        const vitalityEls = document.querySelectorAll('.vitality-score-value');
+        vitalityEls.forEach(el => {
+            el.innerText = score;
+        });
+
+        // Update level displays if any
+        const levelEls = document.querySelectorAll('.vitality-level-name');
+        levelEls.forEach(el => {
+            el.innerText = level;
+        });
+
+        // Update badge backgrounds based on level
+        const badges = document.querySelectorAll('.vitality-badge');
+        badges.forEach(badge => {
+            badge.setAttribute('data-level', level.toLowerCase().replace(' ', '-'));
+        });
+    }
+
+    getStreakCount() {
+        if (!this.history || this.history.length === 0) return 0;
+
+        // Sort history by timestamp descending
+        const sortedHistory = [...this.history].sort((a, b) => b.timestamp - a.timestamp);
+
+        let streak = 0;
+        let lastDate = null;
+
+        for (const item of sortedHistory) {
+            const date = new Date(item.timestamp).toDateString();
+            if (date === lastDate) continue; // Skip multiple sessions in same day
+
+            const today = new Date();
+            const d = new Date(item.timestamp);
+            const diffDays = Math.floor((today - d) / (1000 * 60 * 60 * 24));
+
+            if (streak === 0) {
+                if (diffDays <= 1) { // Current day or yesterday
+                    streak = 1;
+                    lastDate = date;
+                } else {
+                    return 0;
+                }
+            } else {
+                const prevDate = new Date(lastDate);
+                const currDate = new Date(date);
+                const dayDiff = Math.floor((prevDate - currDate) / (1000 * 60 * 60 * 24));
+
+                if (dayDiff === 1) {
+                    streak++;
+                    lastDate = date;
+                } else {
+                    break;
+                }
+            }
+        }
+        return streak;
+    }
+
+    calculateVitalityScore() {
+        if (!this.currentUser) return { score: 0, level: 'Recruit' };
+
+        let score = 100; // Base score
+
+        // Activity in last 7 days
+        const sevenDaysAgo = new Date().getTime() - (7 * 24 * 60 * 60 * 1000);
+        const recentActivity = this.history.filter(h => h.timestamp > sevenDaysAgo);
+
+        // Participation bonuses
+        recentActivity.forEach(h => {
+            if (h.type === 'gemini_protocol') score += 50;
+            else if (h.type === 'group_stretch') score += 100; // Increased bonus for team participation
+            else if (h.type === 'exercise_click') score += 10; // Small reward for exploring
+            else score += 20; // General activity
+        });
+
+        // Streak bonus
+        const streak = this.getStreakCount();
+        score += streak * 30; // Increased streak bonus
+
+        // Group multiplier
+        const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
+        const userData = users[this.currentUser.email] || {};
+        if (userData.groupCode) {
+            score = Math.floor(score * 1.5); // Better multiplier for being in a team
+        }
+
+        const cappedScore = Math.min(10000, score);
+
+        // Leveling system
+        let level = 'Recruit';
+        if (cappedScore >= 2000) level = 'Elite Warrior';
+        else if (cappedScore >= 1000) level = 'Guardian';
+        else if (cappedScore >= 500) level = 'Warrior';
+        else if (cappedScore >= 250) level = 'Scout';
+
+        return { score: cappedScore, level };
     }
 
     // --- Weekly & Group Logic ---
@@ -1772,6 +1971,23 @@ class WellnessApp {
                 ${ex.icon}
             </div>
         `;
+
+        // Update Hero Quick Access
+        if (this.heroQuickWorkout) {
+            this.heroQuickWorkout.innerHTML = `
+                <a href="exercises.html#${ex.id}" class="quick-workout-capsule">
+                    <span class="quick-workout-icon">${ex.icon}</span>
+                    <div class="quick-workout-text">
+                        <span class="quick-workout-label">Today's Group Focus</span>
+                        <span class="quick-workout-title">${ex.title}</span>
+                    </div>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="margin-left: 0.5rem; color: var(--primary);">
+                        <path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/>
+                    </svg>
+                </a>
+            `;
+            this.heroQuickWorkout.classList.remove('hidden');
+        }
     }
 
     renderGroupPlan(groupCode) {
