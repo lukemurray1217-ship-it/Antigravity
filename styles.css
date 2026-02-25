@@ -822,21 +822,21 @@ header.scrolled .logo {
     display: flex;
     justify-content: space-between;
     font-size: 0.9rem;
-    color: #050607;
-    /* Dark font */
+    color: #000000;
+    /* Pure black for Warrior Update */
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.15em;
     align-items: center;
-    border-bottom: 1px solid rgba(5, 6, 7, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     padding-bottom: 0.5rem;
 }
 
 .toast-body {
     font-size: 1.15rem;
     line-height: 1.5;
-    color: #050607;
-    /* Dark font for maximum readability */
+    color: #000000;
+    /* Pure black font for maximum readability */
     font-weight: 500;
 }
 
@@ -3223,7 +3223,8 @@ textarea:focus {
     margin-bottom: 0.75rem;
     font-size: 0.75rem;
     font-weight: 700;
-    color: var(--primary);
+    color: #000000;
+    /* Switched to black for notifications */
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -3234,7 +3235,8 @@ textarea:focus {
     cursor: pointer;
     font-size: 1.25rem;
     line-height: 1;
-    color: var(--text-muted);
+    color: #000000;
+    /* Visible on light toast */
     padding: 0.25rem;
     border-radius: 50%;
     transition: all 0.2s ease;
@@ -3247,7 +3249,8 @@ textarea:focus {
 
 .toast-body {
     font-size: 0.95rem;
-    color: var(--text);
+    color: #000000;
+    /* Black font for notifications */
     line-height: 1.5;
     margin-bottom: 1rem;
 }
