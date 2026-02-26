@@ -1808,6 +1808,126 @@ textarea:focus {
     letter-spacing: 1px;
 }
 
+/* Organization Leaderboard & Community Hub */
+.leaderboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.leaderboard-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+#community-filter-tag {
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+#community-hub {
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, rgba(8, 9, 10, 0.4), rgba(var(--primary-rgb), 0.05));
+    border: 1px solid var(--border-bright);
+}
+
+.hub-flex-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.hub-info {
+    flex: 1;
+    min-width: 300px;
+}
+
+.hub-info h4 {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+}
+
+.hub-info h3 {
+    margin: 0;
+}
+
+#community-status-msg {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+#join-community-controls {
+    display: flex;
+    gap: 0.5rem;
+    background: var(--surface-light);
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-bright);
+}
+
+.hashtag-input-group {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-sm);
+    padding: 0 1rem;
+    border: 1px solid var(--border);
+}
+
+.hashtag-prefix {
+    color: var(--primary);
+    font-weight: 800;
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+}
+
+#community-input {
+    background: transparent;
+    border: none;
+    padding: 0.75rem 0;
+    color: white;
+    font-weight: 700;
+    width: 140px;
+    outline: none;
+}
+
+#active-community-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.active-hub-badge {
+    background: var(--surface-light);
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.active-hub-badge span:first-child {
+    font-size: 1.2rem;
+}
+
+#current-hub-display {
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: var(--primary);
+    text-transform: uppercase;
+}
+
 .leaderboard-table {
     width: 100%;
     border-collapse: collapse;

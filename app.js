@@ -258,19 +258,22 @@ class WellnessApp {
         this.navProfile = document.getElementById('nav-profile');
         this.navMore = document.getElementById('nav-more');
 
-        // NEW: Enterprise Elements
-        this.leaderboardBody = document.getElementById('leaderboard-body');
-        this.corpIndex = document.getElementById('corporate-overview');
-        this.leaderImpactCard = document.getElementById('leader-impact-card');
+        // Community Hub Elements
+        this.communityHub = document.getElementById('community-hub');
+        this.communityInput = document.getElementById('community-input');
+        this.submitCommunityBtn = document.getElementById('submit-community-btn');
+        this.activeCommunityControls = document.getElementById('active-community-controls');
+        this.joinCommunityControls = document.getElementById('join-community-controls');
+        this.currentHubDisplay = document.getElementById('current-hub-display');
+        this.leaveCommunityBtn = document.getElementById('leave-community-btn');
+        this.communityFilterTag = document.getElementById('community-filter-tag');
+        this.activeCommunityName = document.getElementById('active-community-name');
+        this.communityStatusMsg = document.getElementById('community-status-msg');
 
-        // NEW: Onboarding Elements
+        // Onboarding Elements
         this.onboardingBanner = document.getElementById('onboarding-banner');
-        this.onboardingClose = document.getElementById('onboarding-close');
         this.onboardingAction = document.getElementById('onboarding-action');
-
-        // NEW: Homepage Quick Access
-        this.heroQuickWorkout = document.getElementById('hero-quick-workout');
-        this.dailyStretchesBox = document.getElementById('daily-stretches-access-point');
+        this.onboardingClose = document.getElementById('onboarding-close');
     }
 
     initEventListeners() {
@@ -310,6 +313,15 @@ class WellnessApp {
         if (this.leaveGroupBtn) this.leaveGroupBtn.addEventListener('click', () => this.handleLeaveGroup());
         if (this.updateVibeBtn) this.updateVibeBtn.addEventListener('click', () => this.handleUpdateVibe());
         if (this.createGroupBtn) this.createGroupBtn.addEventListener('click', () => this.handleCreateGroup());
+
+        // Community Hub Listeners
+        if (this.submitCommunityBtn) this.submitCommunityBtn.addEventListener('click', () => this.handleJoinCommunity());
+        if (this.leaveCommunityBtn) this.leaveCommunityBtn.addEventListener('click', () => this.handleLeaveCommunity());
+        if (this.communityInput) {
+            this.communityInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleJoinCommunity();
+            });
+        }
 
         // Newsletter Listeners
         if (this.generateNewsletterBtn) this.generateNewsletterBtn.addEventListener('click', () => this.handleGenerateNewsletter());
@@ -372,6 +384,7 @@ class WellnessApp {
                 localStorage.setItem('warrior_onboarding_dismissed', 'true');
             });
             this.onboardingAction.addEventListener('click', () => {
+                this.onboardingBanner.classList.add('hidden');
                 this.toggleSettings(true);
                 // Pulse effects on key setup areas
                 this.pulseSettingsSteps();
@@ -651,13 +664,92 @@ class WellnessApp {
                 this.renderWarriorDashboard(userData);
             }
 
+            this.updateCommunityHubUI(userData.community);
             this.renderHomeStrategy();
             this.renderDailyStretchesBox();
+            if (this.communityHub) this.communityHub.classList.remove('hidden');
         } else {
             this.loggedOutGroups.classList.remove('hidden');
             this.loggedInGroups.classList.add('hidden');
+            if (this.communityHub) this.communityHub.classList.add('hidden');
             if (this.leaderToolbar) this.leaderToolbar.classList.add('hidden');
         }
+    }
+
+    /* --- COMMUNITY HUB LOGIC --- */
+    updateCommunityHubUI(community) {
+        if (!this.communityHub) return;
+
+        if (community) {
+            this.joinCommunityControls.classList.add('hidden');
+            this.activeCommunityControls.classList.remove('hidden');
+            if (this.currentHubDisplay) this.currentHubDisplay.innerText = community;
+            if (this.communityStatusMsg) this.communityStatusMsg.innerText = `Connected to #${community.toUpperCase()}. Your vitality contributes to the organization rankings.`;
+        } else {
+            this.joinCommunityControls.classList.remove('hidden');
+            this.activeCommunityControls.classList.add('hidden');
+            if (this.communityStatusMsg) this.communityStatusMsg.innerText = "Join a community to see how your squad stacks up against your global organization.";
+        }
+    }
+
+    handleJoinCommunity() {
+        if (!this.communityInput || !this.currentUser) return;
+        const community = this.communityInput.value.trim().toLowerCase();
+
+        if (!community) {
+            this.showToast('Please enter a community ID (e.g., nike, jpmorgan).');
+            return;
+        }
+
+        const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
+        if (users[this.currentUser.email].community === community) {
+            this.showToast(`You are already connected to the #${community.toUpperCase()} hub.`);
+            return;
+        }
+
+        users[this.currentUser.email].community = community;
+
+        // If user is a leader, propagate to their group
+        const groupCode = users[this.currentUser.email].groupCode;
+        if (groupCode && users[this.currentUser.email].role === 'leader') {
+            const groups = JSON.parse(localStorage.getItem('warrior_groups')) || {};
+            if (groups[groupCode]) {
+                groups[groupCode].community = community;
+                localStorage.setItem('warrior_groups', JSON.stringify(groups));
+            }
+        }
+
+        localStorage.setItem('warrior_users', JSON.stringify(users));
+        this.currentUser = users[this.currentUser.email]; // Sync in-memory user
+        this.showToast(`Successfully joined the #${community.toUpperCase()} hub! 🏢`);
+        this.communityInput.value = '';
+        this.updateCommunityHubUI(community);
+        this.renderLeaderboard();
+    }
+
+    handleLeaveCommunity() {
+        if (!this.currentUser) return;
+        if (!confirm('Are you sure you want to leave this organization hub?')) return;
+
+        const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
+        const oldCommunity = users[this.currentUser.email].community;
+        users[this.currentUser.email].community = '';
+
+        // If user is a leader, propagate to their group
+        const groupCode = users[this.currentUser.email].groupCode;
+        if (groupCode && users[this.currentUser.email].role === 'leader') {
+            const groups = JSON.parse(localStorage.getItem('warrior_groups')) || {};
+            if (groups[groupCode]) {
+                groups[groupCode].community = '';
+                localStorage.setItem('warrior_groups', JSON.stringify(groups));
+            }
+        }
+
+        localStorage.setItem('warrior_users', JSON.stringify(users));
+        this.currentUser = users[this.currentUser.email]; // Sync in-memory user
+        this.showToast(`Left the #${oldCommunity.toUpperCase()} hub.`);
+        this.updateCommunityHubUI('');
+        this.renderLeaderboard();
     }
 
     renderDailyStretchesBox() {
@@ -838,6 +930,12 @@ class WellnessApp {
         }
 
         localStorage.setItem('warrior_users', JSON.stringify(users));
+        this.currentUser = users[this.currentUser.email]; // Sync in-memory user
+        if (sessionStorage.getItem('current_warrior_user')) {
+            sessionStorage.setItem('current_warrior_user', JSON.stringify(this.currentUser));
+        } else {
+            localStorage.setItem('current_warrior_user', JSON.stringify(this.currentUser));
+        }
 
         if (this.currentUser.role === 'member') {
             const welcomeMsg = groups[code]?.community
@@ -852,6 +950,8 @@ class WellnessApp {
     }
 
     handleLeaveGroup() {
+        if (!this.currentUser) return;
+
         const confirmMsg = this.currentUser.role === 'leader'
             ? '⚠️ WARNING: You are the Department Head. Leaving will not delete the group, but you will lose access to team management tools. Are you sure?'
             : 'Are you sure you want to leave your squad? This will reset your group progress views and impact tracking for this team.';
@@ -861,11 +961,35 @@ class WellnessApp {
         }
 
         const users = JSON.parse(localStorage.getItem('warrior_users')) || {};
-        delete users[this.currentUser.email].groupCode;
+        const groups = JSON.parse(localStorage.getItem('warrior_groups')) || {};
+        const userEmail = this.currentUser.email;
+        const groupCode = users[userEmail]?.groupCode;
+
+        // Cleanup group membership count
+        if (groupCode && groups[groupCode]) {
+            groups[groupCode].members = Math.max(0, (groups[groupCode].members || 1) - 1);
+            localStorage.setItem('warrior_groups', JSON.stringify(groups));
+        }
+
+        // Cleanup user metadata
+        delete users[userEmail].groupCode;
+        delete users[userEmail].groupName;
+        delete users[userEmail].community;
         localStorage.setItem('warrior_users', JSON.stringify(users));
 
+        // Sync in-memory user
+        this.currentUser = users[userEmail];
+        if (sessionStorage.getItem('current_warrior_user')) {
+            sessionStorage.setItem('current_warrior_user', JSON.stringify(this.currentUser));
+        } else {
+            localStorage.setItem('current_warrior_user', JSON.stringify(this.currentUser));
+        }
+
         this.showToast('You have left the squad. Stay mobile, Warrior! 🛡️');
+
+        // Re-initialize to update dashboard states
         this.initGroups();
+        this.renderLeaderboard();
     }
 
     handleUpdateVibe() {
@@ -1377,6 +1501,7 @@ class WellnessApp {
 
         this.showToast('Configuration saved! ✅');
         this.toggleSettings(false);
+        this.initOnboarding();
     }
 
     async handleGeminiRequest() {
@@ -1643,7 +1768,6 @@ class WellnessApp {
     }
 
     async optimizeModelSelection() {
-        console.log('Optimizing model selection...');
 
         const availableModels = await this.getAvailableModels();
         if (availableModels.length === 0) return;
@@ -2157,27 +2281,47 @@ class WellnessApp {
         const currentUserData = this.currentUser ? (users[this.currentUser.email] || {}) : {};
         const userCommunity = currentUserData.community || '';
 
+        // Update Community Tags/Titles in UI
+        if (this.communityFilterTag && this.activeCommunityName) {
+            if (userCommunity) {
+                this.communityFilterTag.classList.remove('hidden');
+                this.activeCommunityName.innerText = userCommunity.toUpperCase();
+            } else {
+                this.communityFilterTag.classList.add('hidden');
+            }
+        }
+
+        const lbTitle = document.querySelector('#org-leaderboard h3');
+        if (lbTitle) {
+            lbTitle.innerText = userCommunity
+                ? `${userCommunity.toUpperCase()} Community Leaderboard`
+                : 'Global Organization Leaderboard';
+        }
+
         // Convert groups object to array and apply filtering/sorting
         let groupList = Object.values(groups);
 
         // If user is in a community, filter to show only that community (or all if user chooses)
-        // For now, let's show the "Community Leaderboard" if they have a tag
         if (userCommunity) {
             groupList = groupList.filter(g => g.community === userCommunity);
             // Add some "filler" departments if the community is small to make it look live
             if (groupList.length < 3) {
-                groupList.push(
+                const fillers = [
                     { name: "Executive Suite", score: 850, members: 12, trend: "+0.5%", status: "up", community: userCommunity },
-                    { name: "Global Ops", score: 720, members: 45, trend: "+1.2%", status: "up", community: userCommunity }
-                );
+                    { name: "Global Ops", score: 720, members: 45, trend: "+1.2%", status: "up", community: userCommunity },
+                    { name: "Support Hub", score: 640, members: 28, trend: "+0.3%", status: "up", community: userCommunity }
+                ];
+                // Only add fillers that aren't already there (by name)
+                fillers.forEach(filler => {
+                    if (!groupList.find(g => g.name === filler.name)) {
+                        groupList.push(filler);
+                    }
+                });
             }
-            // Update title if it exists
-            const lbTitle = document.querySelector('#org-leaderboard h3');
-            if (lbTitle) lbTitle.innerText = `${userCommunity} Community Leaderboard`;
         }
 
         // Default sort by score descending
-        groupList.sort((a, b) => b.score - a.score);
+        groupList.sort((a, b) => (b.score || 0) - (a.score || 0));
 
         // Map to HTML
         this.leaderboardBody.innerHTML = groupList.map((dept, index) => {
@@ -2208,8 +2352,8 @@ class WellnessApp {
     initOnboarding() {
         if (!this.onboardingBanner) return;
 
-        // Check if configuration is missing
-        const isPersonalMissing = this.apiMode === 'personal' && !this.apiKey;
+        // Check if configuration is missing or placeholder
+        const isPersonalMissing = this.apiMode === 'personal' && (!this.apiKey || this.apiKey.startsWith('AIzaSy_PLACEHOLDER'));
         const isSharedMissing = this.apiMode === 'shared' && !this.sitePassword;
         const hasDismissed = localStorage.getItem('warrior_onboarding_dismissed');
 

@@ -35,6 +35,11 @@
                 <button id="login-nav-btn" class="primary-btn">Login</button>
                 <div id="user-info" class="hidden">
                     <span id="user-display"></span>
+                    <div id="header-vitality" class="vitality-badge hidden" style="margin-left: 1rem; cursor: pointer;"
+                        onclick="location.href='profile.html'">
+                        🛡️ <span class="vitality-score-value">0</span> <span class="vitality-level-name"
+                            style="margin-left: 0.5rem; font-size: 0.7rem; font-weight: 700; opacity: 0.8;">Recruit</span>
+                    </div>
                     <button id="logout-btn" class="secondary-btn"
                         style="width: auto; padding: 0.5rem 1rem; margin-left: 1rem;">Logout</button>
                 </div>
@@ -170,15 +175,17 @@
                     </section>
 
                     <!-- NEW: Global Org Leaderboard -->
-                    <section id="org-leaderboard" class="info-card reveal" style="margin-bottom: 2rem;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <section id="org-leaderboard" class="info-card reveal">
+                        <div class="leaderboard-header">
+                            <div class="leaderboard-title-group">
                                 <h3 style="margin: 0;">Global Organization Leaderboard</h3>
                                 <div class="live-indicator">
                                     <span class="dot"></span>
                                     LIVE
                                 </div>
+                            </div>
+                            <div id="community-filter-tag" class="hidden">
+                                #<span id="active-community-name"></span>
                             </div>
                             <span class="hint">Updated real-time across all departments</span>
                         </div>
@@ -195,47 +202,36 @@
                                 </thead>
                                 <tbody id="leaderboard-body">
                                     <!-- Leaderboard rows will be injected here -->
-                                    <tr style="border-bottom: 1px solid var(--border-bright);">
-                                        <td style="padding: 1rem;"><span class="rank-badge rank-1">1</span></td>
-                                        <td style="padding: 1rem; font-weight: 600;">Investment Banking</td>
-                                        <td style="padding: 1rem;">98.4</td>
-                                        <td style="padding: 1rem;">
-                                            <div
-                                                style="width: 100px; height: 6px; background: var(--surface-light); border-radius: 3px; overflow: hidden;">
-                                                <div style="width: 92%; height: 100%; background: var(--primary);">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td style="padding: 1rem; color: var(--accent-standing);">▲ 1.2%</td>
-                                    </tr>
-                                    <tr style="border-bottom: 1px solid var(--border-bright);">
-                                        <td style="padding: 1rem;"><span class="rank-badge rank-2">2</span></td>
-                                        <td style="padding: 1rem; font-weight: 600;">Asset Management</td>
-                                        <td style="padding: 1rem;">95.1</td>
-                                        <td style="padding: 1rem;">
-                                            <div
-                                                style="width: 100px; height: 6px; background: var(--surface-light); border-radius: 3px; overflow: hidden;">
-                                                <div style="width: 88%; height: 100%; background: var(--primary);">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td style="padding: 1rem; color: var(--accent-standing);">▲ 0.4%</td>
-                                    </tr>
-                                    <tr style="border-bottom: 1px solid var(--border-bright);">
-                                        <td style="padding: 1rem;"><span class="rank-badge rank-3">3</span></td>
-                                        <td style="padding: 1rem; font-weight: 600;">Corporate & Investment Bank</td>
-                                        <td style="padding: 1rem;">92.8</td>
-                                        <td style="padding: 1rem;">
-                                            <div
-                                                style="width: 100px; height: 6px; background: var(--surface-light); border-radius: 3px; overflow: hidden;">
-                                                <div style="width: 84%; height: 100%; background: var(--primary);">
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td style="padding: 1rem; color: var(--accent-eye);">▼ 0.2%</td>
-                                    </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </section>
+
+                    <!-- NEW: Community Hub Section -->
+                    <section id="community-hub" class="info-card reveal">
+                        <div class="hub-flex-container">
+                            <div class="hub-info">
+                                <h4 class="hint">Organization Hub</h4>
+                                <h3>Connect to Your Ecosystem</h3>
+                                <p id="community-status-msg">Join a community to
+                                    see how your squad stacks up against your global organization.</p>
+                            </div>
+
+                            <div id="join-community-controls">
+                                <div class="hashtag-input-group">
+                                    <span class="hashtag-prefix">#</span>
+                                    <input type="text" id="community-input" placeholder="organization-id">
+                                </div>
+                                <button id="submit-community-btn" class="primary-btn">Join Hub</button>
+                            </div>
+
+                            <div id="active-community-controls" class="hidden">
+                                <div class="active-hub-badge">
+                                    <span>🏢</span>
+                                    <span id="current-hub-display"></span>
+                                </div>
+                                <button id="leave-community-btn" class="secondary-btn">Leave Hub</button>
+                            </div>
                         </div>
                     </section>
 

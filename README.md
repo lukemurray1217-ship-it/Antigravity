@@ -1,40 +1,32 @@
-# Wellness Workspace 🌿
-A modern web application designed to promote a healthy work environment by offering quick desk exercises and walking routines, powered by Google Gemini.
+# Work Warrior | Workspace Wellness 🌿
+A modern web application designed to promote a healthy work environment by offering AI-powered mobility protocols, personal vitality tracking, and collective squad wellness.
 
 ## 🚀 Deployment to Vercel
-This project is ready to be deployed to Vercel via GitHub.
+This project is optimized for deployment to Vercel via GitHub.
 
 ### Steps to Deploy:
-1. **Initialize Git**:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   ```
-2. **Push to GitHub**:
-   - Create a new repository on [GitHub](https://github.com/new).
-   - Follow the instructions to push your local main branch to the remote repository.
-3. **Connect to Vercel**:
-   - Go to [Vercel](https://vercel.com/new).
-   - Import your GitHub repository.
-   - Vercel will automatically detect the Vanilla JS project and deploy it.
-   - Click **Deploy**.
+1. **Push to GitHub**: Connect your local repository to a new GitHub project.
+2. **Connect to Vercel**: Import your repository at [vercel.com](https://vercel.com/new).
+3. **Automatic Detection**: Vercel will detect the Vanilla JS structure and deploy automatically.
 
-## 🔑 Setup
-The app requires a **Google Gemini API Key**.
-1. Open the settings panel (gear icon) in the app.
-2. Enter your API key.
-3. Your key is stored locally in your browser session for security.
+## 🔑 Setup & AI Access
+Work Warrior uses **Google Gemini** to generate personalized wellness protocols.
+- **Personal Key**: Enter your own Gemini API key in the app Settings (gear icon).
+- **Team Access**: Organizations can provide a shared password for centralized access.
+- **Privacy**: Your API keys and passwords are stored securely in your browser's `localStorage` and are never sent to our servers.
 
-## 🛠 Features
-- **AI-Powered Recommendations**: Personalized suggestions based on how you feel.
-- **Vitality Tracking**: Gamified health scoring and leveling system (`Scout` → `Elite Warrior`).
-- **Collective Wellness**: Warrior Squads with shared mobility protocols and department leaderboards.
-- **Privacy First**: Sensitive keys are stored in `localStorage`, never on the server.
-- **Fast & Lightweight**: Zero dependencies, pure HTML/CSS/JS.
+## 🛠 Core Features
+- **🛡️ Vitality Scoring**: A gamified health system. Earn points for exercises and level up from `Recruit` to `Elite Warrior`.
+- **🏗️ Warrior Squads**: Join or create groups to track collective movement and participate in community challenges.
+- **🏢 Community Hub**: High-level organization hashtags (e.g., #nike, #marriott) to filter global leaderboards and see how your squad stacks up.
+- **🧘 Daily Group Stretches**: Assigned protocols for your entire squad to ensure everyone stays mobile.
+- **🤖 Warrior Bot Protocol**: Describe how you feel, and get a custom exercise routine instantly.
+
+## 📱 Tech Stack
+- **Structure**: Semantic HTML5
+- **Style**: Custom "Eco-Modern" CSS with glassmorphism and smooth animations.
+- **Logic**: Pure Vanilla JavaScript (Zero dependencies).
+- **AI Engine**: Google Gemini API via Vercel Edge Proxy.
 
 ## 📄 License
 MIT
-
-## 🔄 Status
-- **Last Deployment Triggered**: 2026-02-19 (Force Rebuild for Env Vars)
